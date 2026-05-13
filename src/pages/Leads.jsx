@@ -233,7 +233,8 @@ export default function Leads() {
                 </div>
               );
             })}
-          </div>
+            </div>
+          </DndContext>
         ) : (
           <div className="glass-card overflow-x-auto">
             <table className="w-full text-sm">
