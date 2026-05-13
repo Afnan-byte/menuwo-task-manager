@@ -67,7 +67,7 @@ const useExpenseStore = create((set, get) => ({
     const monthMap = {};
     entries.forEach((e) => {
       const dateVal = e.created_at || e.date;
-      const month = dateVal ? new Date(dateVal).toLocaleString('default', { month: 'short', year: '2-digit' }) : 'Unknown';
+      const month = dateVal ? new Date(dateVal).toLocaleString('default', { month: 'short', year: 'numeric' }) : 'Unknown';
       if (!monthMap[month]) monthMap[month] = { month, revenue: 0, expenses: 0 };
       if (e.type === 'revenue') monthMap[month].revenue += parseFloat(e.amount) || 0;
       else monthMap[month].expenses += parseFloat(e.amount) || 0;
