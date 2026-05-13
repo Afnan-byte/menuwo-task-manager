@@ -170,7 +170,7 @@ export default function Leads() {
         </div>
 
         {/* Summary cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
           {PIPELINE.map((stage) => {
             const count = leads.filter((l) => l.status === stage.id).length;
             const value = leads.filter((l) => l.status === stage.id).reduce((s, l) => s + (parseFloat(l.dealValue) || 0), 0);
