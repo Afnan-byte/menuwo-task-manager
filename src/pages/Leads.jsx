@@ -234,44 +234,77 @@ export default function Leads() {
             })}
             </div>
         ) : (
-          <div className="glass-card overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/5">
-                  {['Restaurant', 'Contact', 'Phone', 'Status', 'Deal Value', 'Follow Up', ''].map((h) => (
-                    <th key={h} className="text-left px-4 py-3 text-text-muted font-medium text-xs uppercase">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <AnimatePresence>
-                  {filtered.map((lead) => (
-                    <motion.tr key={lead.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      className="border-b border-white/5 hover:bg-white/2">
-                      <td className="px-4 py-3 font-medium text-white">{lead.restaurant}</td>
-                      <td className="px-4 py-3 text-text-secondary">{lead.contact || '—'}</td>
-                      <td className="px-4 py-3 text-text-secondary">{lead.phone || '—'}</td>
-                      <td className="px-4 py-3">
-                        <span className={`badge text-[10px] ${getLeadStatusColor(lead.status)}`}>{lead.status}</span>
-                      </td>
-                      <td className="px-4 py-3 text-accent font-medium">{lead.dealValue ? formatCurrency(lead.dealValue) : '—'}</td>
-                      <td className="px-4 py-3 text-text-muted text-xs">{formatDate(lead.followUp)}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1">
-                          <button onClick={() => { setEditLead(lead); setShowModal(true); }}
-                            className="p-1.5 text-text-muted hover:text-white"><Edit2 size={13} /></button>
-                          <button onClick={() => deleteLead(lead.id)}
-                            className="p-1.5 text-text-muted hover:text-red-400"><Trash2 size={13} /></button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
-              </tbody>
-            </table>
+          <div className="glass-card overflow-hidden">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/5">
+                    {['Restaurant', 'Contact', 'Phone', 'Status', 'Deal Value', 'Follow Up', ''].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-text-muted font-medium text-xs uppercase">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <AnimatePresence>
+                    {filtered.map((lead) => (
+                      <motion.tr key={lead.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="border-b border-white/5 hover:bg-white/2">
+                        <td className="px-4 py-3 font-medium text-white">{lead.restaurant}</td>
+                        <td className="px-4 py-3 text-text-secondary">{lead.contact || '—'}</td>
+                        <td className="px-4 py-3 text-text-secondary">{lead.phone || '—'}</td>
+                        <td className="px-4 py-3">
+                          <span className={`badge text-[10px] ${getLeadStatusColor(lead.status)}`}>{lead.status}</span>
+                        </td>
+                        <td className="px-4 py-3 text-accent font-medium">{lead.dealValue ? formatCurrency(lead.dealValue) : '—'}</td>
+                        <td className="px-4 py-3 text-text-muted text-xs">{formatDate(lead.followUp)}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-1">
+                            <button onClick={() => { setEditLead(lead); setShowModal(true); }}
+                              className="p-1.5 text-text-muted hover:text-white"><Edit2 size={13} /></button>
+                            <button onClick={() => deleteLead(lead.id)}
+                              className="p-1.5 text-text-muted hover:text-red-400"><Trash2 size={13} /></button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-white/5">
+              {filtered.map((lead) => (
+                <div key={lead.id} className="p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold text-white">{lead.restaurant}</p>
+                      <p className="text-[10px] text-text-muted mt-0.5">{lead.contact || 'No contact'} • {lead.phone || 'No phone'}</p>
+                    </div>
+                    <span className={`badge text-[10px] ${getLeadStatusColor(lead.status)}`}>{lead.status}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-accent font-bold">{lead.dealValue ? formatCurrency(lead.dealValue) : '—'}</span>
+                    <div className="flex gap-2">
+                      <button onClick={() => { setEditLead(lead); setShowModal(true); }}
+                        className="p-2 text-text-muted hover:text-white"><Edit2 size={14} /></button>
+                      <button onClick={() => deleteLead(lead.id)}
+                        className="p-2 text-text-muted hover:text-red-400"><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                  {lead.followUp && (
+                    <div className="flex items-center gap-1.5 text-[10px] text-amber-400 bg-amber-400/5 p-2 rounded-lg">
+                      Follow-up: {formatDate(lead.followUp)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
             {filtered.length === 0 && (
               <div className="text-center py-16">
-                <Building2 className="text-text-muted mx-auto mb-3" size={36} />
+                <Users className="text-text-muted mx-auto mb-3" size={36} />
                 <p className="text-text-muted text-sm">No leads found. Add your first restaurant client!</p>
               </div>
             )}

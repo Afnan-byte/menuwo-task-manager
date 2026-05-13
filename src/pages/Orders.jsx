@@ -114,44 +114,73 @@ export default function Orders() {
             onChange={(e) => setSearch(e.target.value)} />
         </div>
 
-        {/* Table */}
-        <div className="glass-card overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/5">
-                {['Client', 'Stand Type', 'Qty', 'Status', 'Delivery', 'Notes', ''].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-text-muted font-medium text-xs uppercase">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence>
-                {filtered.map((order) => (
-                  <motion.tr key={order.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="border-b border-white/5 hover:bg-white/2 group">
-                    <td className="px-4 py-3 font-medium text-white">{order.client}</td>
-                    <td className="px-4 py-3">
-                      <span className="badge text-[10px] text-text-secondary bg-white/5">{order.standType}</span>
-                    </td>
-                    <td className="px-4 py-3 text-white font-semibold">{order.qty}</td>
-                    <td className="px-4 py-3">
-                      <span className={`badge text-[10px] ${getOrderStatusColor(order.status)}`}>{order.status}</span>
-                    </td>
-                    <td className="px-4 py-3 text-text-muted text-xs">{formatDate(order.delivery)}</td>
-                    <td className="px-4 py-3 text-text-muted text-xs max-w-[150px] truncate">{order.notes || '—'}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setEditOrder(order); setShowModal(true); }}
-                          className="p-1.5 text-text-muted hover:text-white"><Edit2 size={13} /></button>
-                        <button onClick={() => deleteOrder(order.id)}
-                          className="p-1.5 text-text-muted hover:text-red-400"><Trash2 size={13} /></button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
+        {/* Table/List View */}
+        <div className="glass-card overflow-hidden">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/5">
+                  {['Client', 'Stand Type', 'Qty', 'Status', 'Delivery', 'Notes', ''].map((h) => (
+                    <th key={h} className="text-left px-4 py-3 text-text-muted font-medium text-xs uppercase">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <AnimatePresence>
+                  {filtered.map((order) => (
+                    <motion.tr key={order.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      className="border-b border-white/5 hover:bg-white/2 group">
+                      <td className="px-4 py-3 font-medium text-white">{order.client}</td>
+                      <td className="px-4 py-3">
+                        <span className="badge text-[10px] text-text-secondary bg-white/5">{order.standType}</span>
+                      </td>
+                      <td className="px-4 py-3 text-white font-semibold">{order.qty}</td>
+                      <td className="px-4 py-3">
+                        <span className={`badge text-[10px] ${getOrderStatusColor(order.status)}`}>{order.status}</span>
+                      </td>
+                      <td className="px-4 py-3 text-text-muted text-xs">{formatDate(order.delivery)}</td>
+                      <td className="px-4 py-3 text-text-muted text-xs max-w-[150px] truncate">{order.notes || '—'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => { setEditOrder(order); setShowModal(true); }}
+                            className="p-1.5 text-text-muted hover:text-white"><Edit2 size={13} /></button>
+                          <button onClick={() => deleteOrder(order.id)}
+                            className="p-1.5 text-text-muted hover:text-red-400"><Trash2 size={13} /></button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden divide-y divide-white/5">
+            {filtered.map((order) => (
+              <div key={order.id} className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-semibold text-white">{order.client}</p>
+                    <p className="text-[10px] text-text-muted mt-0.5">{order.standType} Stand • {order.qty} units</p>
+                  </div>
+                  <span className={`badge text-[10px] ${getOrderStatusColor(order.status)}`}>{order.status}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-text-muted">Delivery: {formatDate(order.delivery)}</span>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setEditOrder(order); setShowModal(true); }}
+                      className="p-2 text-text-muted hover:text-white"><Edit2 size={14} /></button>
+                    <button onClick={() => deleteOrder(order.id)}
+                      className="p-2 text-text-muted hover:text-red-400"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+                {order.notes && <p className="text-[11px] text-text-muted bg-white/2 p-2 rounded-lg italic">"{order.notes}"</p>}
+              </div>
+            ))}
+          </div>
+
           {filtered.length === 0 && (
             <div className="text-center py-16">
               <Package className="text-text-muted mx-auto mb-3" size={36} />

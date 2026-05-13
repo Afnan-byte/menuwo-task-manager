@@ -178,20 +178,22 @@ export default function Expenses() {
           </div>
         </div>
 
-        {/* Entries table */}
+        {/* Entries table/list */}
         <div className="glass-card overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
             <h3 className="text-sm font-semibold text-white">All Entries</h3>
             <div className="flex gap-1">
               {['all', 'revenue', 'expense'].map((f) => (
                 <button key={f} onClick={() => setFilter(f)}
-                  className={`px-3 py-1 rounded-lg text-xs capitalize transition-all ${filter === f ? 'bg-accent text-black font-semibold' : 'text-text-secondary hover:text-white'}`}>
+                  className={`px-3 py-1 rounded-lg text-xs capitalize transition-all ${filter === f ? 'bg-accent text-white font-semibold' : 'text-text-secondary hover:text-white'}`}>
                   {f}
                 </button>
               ))}
             </div>
           </div>
-          <div className="overflow-x-auto">
+          
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5">
@@ -233,13 +235,43 @@ export default function Expenses() {
                 </AnimatePresence>
               </tbody>
             </table>
-            {filtered.length === 0 && (
-              <div className="text-center py-16">
-                <TrendingUp className="text-text-muted mx-auto mb-3" size={36} />
-                <p className="text-text-muted text-sm">No entries yet. Track your first revenue or expense!</p>
-              </div>
-            )}
           </div>
+
+          {/* Mobile Card List */}
+          <div className="md:hidden divide-y divide-white/5">
+            {filtered.map((entry) => (
+              <div key={entry.id} className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className={`badge text-[8px] uppercase tracking-wider mb-1 ${entry.type === 'revenue' ? 'text-accent bg-accent/10' : 'text-red-400 bg-red-400/10'}`}>
+                      {entry.type}
+                    </span>
+                    <p className="text-[10px] text-text-muted">{formatDate(entry.date)}</p>
+                  </div>
+                  <p className={`text-lg font-bold ${entry.type === 'revenue' ? 'text-accent' : 'text-red-400'}`}>
+                    {entry.type === 'revenue' ? '+' : '-'}{formatCurrency(entry.amount)}
+                  </p>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-text-secondary">{entry.category || 'General'}</span>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setEditEntry(entry); setShowModal(true); }}
+                      className="p-2 text-text-muted hover:text-white transition-colors"><Edit2 size={14} /></button>
+                    <button onClick={() => deleteEntry(entry.id)}
+                      className="p-2 text-text-muted hover:text-red-400 transition-colors"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+                {entry.notes && <p className="text-[10px] text-text-muted italic border-l border-white/10 pl-2 ml-1">{entry.notes}</p>}
+              </div>
+            ))}
+          </div>
+
+          {filtered.length === 0 && (
+            <div className="text-center py-16">
+              <TrendingUp className="text-text-muted mx-auto mb-3" size={36} />
+              <p className="text-text-muted text-sm">No entries yet. Track your first revenue or expense!</p>
+            </div>
+          )}
         </div>
       </div>
 
