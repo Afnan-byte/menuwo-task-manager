@@ -33,8 +33,14 @@ const useSettingsStore = create((set, get) => ({
       .limit(1);
     
     if (!notifError && notifData && notifData.length > 0) {
-      set({ notifications: notifData[0] });
-      lsSet('menuwo_notif', notifData[0]);
+      const mappedNotifs = {
+        ...notifData[0],
+        overdueTasks: notifData[0].overdue_tasks,
+        leadFollowups: notifData[0].lead_followups,
+        dailyBriefing: notifData[0].daily_briefing,
+      };
+      set({ notifications: mappedNotifs });
+      lsSet('menuwo_notif', mappedNotifs);
     }
 
     set({ loading: false });
@@ -57,7 +63,18 @@ const useSettingsStore = create((set, get) => ({
     lsSet('menuwo_notif', newNotifs);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('notifications').upsert([newNotifs]);
+      // Map camelCase to snake_case for Supabase
+      const dbNotifs = {
+        ...newNotifs,
+        overdue_tasks: newNotifs.overdueTasks,
+        lead_followups: newNotifs.leadFollowups,
+        daily_briefing: newNotifs.dailyBriefing,
+      };
+      delete dbNotifs.overdueTasks;
+      delete dbNotifs.leadFollowups;
+      delete dbNotifs.dailyBriefing;
+
+      const { error } = await supabase.from('notifications').upsert([dbNotifs]);
       if (error) console.error('Supabase error:', error);
     }
   },

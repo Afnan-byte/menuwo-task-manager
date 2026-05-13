@@ -11,8 +11,13 @@ const useLeadStore = create((set, get) => ({
     set({ loading: true });
     const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
     if (!error && data) {
-      set({ leads: data });
-      lsSet(LS_KEYS.LEADS, data);
+      const mappedData = data.map(l => ({
+        ...l,
+        dealValue: l.deal_value,
+        followUp: l.follow_up,
+      }));
+      set({ leads: mappedData });
+      lsSet(LS_KEYS.LEADS, mappedData);
     }
     set({ loading: false });
   },
@@ -39,7 +44,16 @@ const useLeadStore = create((set, get) => ({
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('leads').insert([newLead]);
+      // Map camelCase to snake_case for Supabase
+      const dbLead = {
+        ...newLead,
+        deal_value: newLead.dealValue,
+        follow_up: newLead.followUp,
+      };
+      delete dbLead.dealValue;
+      delete dbLead.followUp;
+
+      const { error } = await supabase.from('leads').insert([dbLead]);
       if (error) console.error('Supabase error:', error);
     }
   },
@@ -50,7 +64,18 @@ const useLeadStore = create((set, get) => ({
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('leads').update(updates).eq('id', id);
+      // Map camelCase to snake_case for Supabase
+      const dbUpdates = { ...updates };
+      if (updates.dealValue !== undefined) {
+        dbUpdates.deal_value = updates.dealValue;
+        delete dbUpdates.dealValue;
+      }
+      if (updates.followUp !== undefined) {
+        dbUpdates.follow_up = updates.followUp;
+        delete dbUpdates.followUp;
+      }
+
+      const { error } = await supabase.from('leads').update(dbUpdates).eq('id', id);
       if (error) console.error('Supabase error:', error);
     }
   },

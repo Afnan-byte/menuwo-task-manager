@@ -11,8 +11,12 @@ const useOrderStore = create((set, get) => ({
     set({ loading: true });
     const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
     if (!error && data) {
-      set({ orders: data });
-      lsSet(LS_KEYS.ORDERS, data);
+      const mappedData = data.map(o => ({
+        ...o,
+        standType: o.stand_type,
+      }));
+      set({ orders: mappedData });
+      lsSet(LS_KEYS.ORDERS, mappedData);
     }
     set({ loading: false });
   },
@@ -39,7 +43,14 @@ const useOrderStore = create((set, get) => ({
     lsSet(LS_KEYS.ORDERS, updatedOrders);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('orders').insert([newOrder]);
+      // Map camelCase to snake_case for Supabase
+      const dbOrder = {
+        ...newOrder,
+        stand_type: newOrder.standType,
+      };
+      delete dbOrder.standType;
+
+      const { error } = await supabase.from('orders').insert([dbOrder]);
       if (error) console.error('Supabase error:', error);
     }
   },
@@ -50,7 +61,14 @@ const useOrderStore = create((set, get) => ({
     lsSet(LS_KEYS.ORDERS, updatedOrders);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('orders').update(updates).eq('id', id);
+      // Map camelCase to snake_case for Supabase
+      const dbUpdates = { ...updates };
+      if (updates.standType !== undefined) {
+        dbUpdates.stand_type = updates.standType;
+        delete dbUpdates.standType;
+      }
+
+      const { error } = await supabase.from('orders').update(dbUpdates).eq('id', id);
       if (error) console.error('Supabase error:', error);
     }
   },
