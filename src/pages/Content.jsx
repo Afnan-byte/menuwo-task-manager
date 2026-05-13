@@ -13,10 +13,10 @@ const CONTENT_TYPES = [
 ];
 
 const CONTENT_STATUS = [
-  { id: 'idea', label: '💡 Idea', color: '#888' },
-  { id: 'production', label: '🎬 Production', color: '#f59e0b' },
-  { id: 'scheduled', label: '📅 Scheduled', color: '#3b82f6' },
-  { id: 'published', label: '✅ Published', color: '#196F01' },
+  { id: 'idea', label: 'Idea', color: '#888' },
+  { id: 'production', label: 'Production', color: '#f59e0b' },
+  { id: 'scheduled', label: 'Scheduled', color: '#3b82f6' },
+  { id: 'published', label: 'Published', color: '#196F01' },
 ];
 
 function ContentModal({ item, onClose, onSave }) {

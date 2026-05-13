@@ -45,9 +45,9 @@ function EntryModal({ entry, onClose, onSave }) {
               {['expense', 'revenue'].map((t) => (
                 <button key={t} onClick={() => setForm({ ...form, type: t })}
                   className={`flex-1 py-2 rounded-xl text-sm font-medium capitalize transition-all ${
-                    form.type === t ? (t === 'revenue' ? 'bg-accent text-black' : 'bg-red-500/20 text-red-400 border border-red-500/30') : 'btn-ghost'
+                    form.type === t ? (t === 'revenue' ? 'bg-accent text-white' : 'bg-red-500/20 text-red-400 border border-red-500/30') : 'btn-ghost'
                   }`}>
-                  {t === 'expense' ? '📉 Expense' : '📈 Revenue'}
+                  {t === 'expense' ? 'Expense' : 'Revenue'}
                 </button>
               ))}
             </div>

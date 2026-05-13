@@ -69,7 +69,7 @@ function DailyFocus({ tasks }) {
       {topTasks.length === 0 ? (
         <div className="text-center py-6">
           <CheckSquare className="text-text-muted mx-auto mb-2" size={28} />
-          <p className="text-text-muted text-sm">All caught up! 🎉</p>
+          <p className="text-text-muted text-sm">All caught up!</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -182,10 +182,9 @@ export default function Dashboard() {
           className="mb-6"
         >
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-2xl">👋</span>
             <h1 className="text-xl font-bold text-white">{greeting}, Afnan</h1>
           </div>
-          <p className="text-text-muted text-sm ml-8">Here's your Menuwo startup overview for today</p>
+          <p className="text-text-muted text-sm">Here's your Menuwo startup overview for today</p>
         </motion.div>
 
         {/* Stats grid */}

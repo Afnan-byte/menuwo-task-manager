@@ -101,7 +101,7 @@ export default function Settings() {
               ))}
             </div>
             <p className="text-[10px] text-text-muted mt-3">
-              ✨ Full theme engine coming in v2 — currently Forest Green (#196F01) is the active theme.
+              Full theme engine coming in v2 — currently Forest Green (#196F01) is the active theme.
             </p>
           </div>
 

@@ -10,7 +10,7 @@ const PIPELINE = [
   { id: 'contacted', label: 'Contacted', color: '#3b82f6' },
   { id: 'demo', label: 'Demo Scheduled', color: '#f59e0b' },
   { id: 'negotiation', label: 'Negotiation', color: '#ef4444' },
-  { id: 'closed', label: 'Closed ✓', color: '#196F01' },
+  { id: 'closed', label: 'Closed', color: '#196F01' },
 ];
 
 function LeadModal({ lead, onClose, onSave }) {

@@ -6,10 +6,10 @@ import useNoteStore from '../store/noteStore';
 import { timeAgo } from '../lib/utils';
 
 const TAG_CONFIG = {
-  idea: { label: '💡 Idea', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-  feature: { label: '⚡ Feature', color: '#196F01', bg: 'rgba(25,111,1,0.1)' },
-  client: { label: '👤 Client', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
-  business: { label: '📈 Business', color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
+  idea: { label: 'Idea', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+  feature: { label: 'Feature', color: '#196F01', bg: 'rgba(25,111,1,0.1)' },
+  client: { label: 'Client', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
+  business: { label: 'Business', color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
 };
 
 function NoteModal({ note, onClose, onSave }) {
