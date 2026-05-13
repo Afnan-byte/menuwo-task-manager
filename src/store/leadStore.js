@@ -9,15 +9,19 @@ const useLeadStore = create((set, get) => ({
   fetchLeads: async () => {
     if (!isSupabaseConfigured) return;
     set({ loading: true });
-    const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
-    if (!error && data) {
-      const mappedData = data.map(l => ({
-        ...l,
-        dealValue: l.deal_value,
-        followUp: l.follow_up,
-      }));
-      set({ leads: mappedData });
-      lsSet(LS_KEYS.LEADS, mappedData);
+    try {
+      const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+      if (!error && data) {
+        const mappedData = data.map(l => ({
+          ...l,
+          dealValue: l.deal_value,
+          followUp: l.follow_up,
+        }));
+        set({ leads: mappedData });
+        lsSet(LS_KEYS.LEADS, mappedData);
+      }
+    } catch (e) {
+      console.error('Supabase fetch error:', e);
     }
     set({ loading: false });
   },
@@ -34,17 +38,16 @@ const useLeadStore = create((set, get) => ({
   },
 
   addLead: async (lead) => {
-    const newLead = {
-      ...lead,
-      id: lead.id || crypto.randomUUID(),
-      created_at: new Date().toISOString()
+    const newLead = { 
+      ...lead, 
+      id: lead.id || crypto.randomUUID(), 
+      created_at: new Date().toISOString() 
     };
     const updatedLeads = [newLead, ...get().leads];
     set({ leads: updatedLeads });
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
     if (isSupabaseConfigured) {
-      // Map camelCase to snake_case and sanitize values for Supabase
       const dv = newLead.dealValue;
       const fu = newLead.followUp;
       const dbLead = {
@@ -63,6 +66,9 @@ const useLeadStore = create((set, get) => ({
       const { error } = await supabase.from('leads').insert([dbLead]);
       if (error) console.error('Supabase error:', error);
     }
+
+    // Sync revenue for the new lead
+    await handleLeadRevenueSync(newLead.id, newLead);
   },
 
   updateLead: async (id, updates) => {
@@ -72,7 +78,6 @@ const useLeadStore = create((set, get) => ({
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
     if (isSupabaseConfigured) {
-      // Build clean update object with only valid DB columns
       const dbUpdates = {};
       if (updates.restaurant !== undefined) dbUpdates.restaurant = updates.restaurant;
       if (updates.contact !== undefined) dbUpdates.contact = updates.contact || null;
@@ -91,26 +96,17 @@ const useLeadStore = create((set, get) => ({
       if (error) console.error('Supabase error:', error);
     }
 
-    // Auto-add revenue when deal is closed (via edit modal)
-    const newStatus = updates.status;
-    const wasNotClosed = oldLead && oldLead.status !== 'closed';
-    const dealVal = updates.dealValue || (oldLead && oldLead.dealValue);
-    if (newStatus === 'closed' && wasNotClosed && dealVal) {
-      const { default: useExpenseStore } = await import('./expenseStore');
-      useExpenseStore.getState().addEntry({
-        type: 'revenue',
-        amount: parseFloat(dealVal) || 0,
-        category: 'Closed Deal',
-        date: new Date().toISOString(),
-        notes: `Deal closed: ${updates.restaurant || oldLead?.restaurant || 'Unknown'}`,
-      });
-    }
+    // Handle revenue sync
+    await handleLeadRevenueSync(id, { ...oldLead, ...updates });
   },
 
   deleteLead: async (id) => {
     const updatedLeads = get().leads.filter((l) => l.id !== id);
     set({ leads: updatedLeads });
     lsSet(LS_KEYS.LEADS, updatedLeads);
+
+    // Handle revenue sync (deletion)
+    await handleLeadRevenueSync(id, { status: 'deleted' });
 
     if (isSupabaseConfigured) {
       const { error } = await supabase.from('leads').delete().eq('id', id);
@@ -129,18 +125,61 @@ const useLeadStore = create((set, get) => ({
       if (error) console.error('Supabase error:', error);
     }
 
-    // Auto-add revenue when deal is closed
-    if (newStatus === 'closed' && lead && lead.dealValue) {
-      const { default: useExpenseStore } = await import('./expenseStore');
-      useExpenseStore.getState().addEntry({
-        type: 'revenue',
-        amount: parseFloat(lead.dealValue) || 0,
-        category: 'Closed Deal',
-        date: new Date().toISOString(),
-        notes: `Deal closed: ${lead.restaurant}`,
-      });
-    }
+    // Handle revenue sync
+    await handleLeadRevenueSync(id, { ...lead, status: newStatus });
   },
 }));
+
+// Helper to handle lead revenue synchronization
+async function handleLeadRevenueSync(leadId, lead) {
+  try {
+    const { default: useExpenseStore } = await import('./expenseStore');
+    const expenseStore = useExpenseStore.getState();
+    
+    // Always get fresh entries to avoid race conditions
+    const currentEntries = useExpenseStore.getState().entries;
+    const linkedEntries = currentEntries.filter(e => e.notes?.includes(`[LEAD_LINK:${leadId}]`));
+
+    if (lead.status === 'closed' && (lead.dealValue !== undefined && lead.dealValue !== null && lead.dealValue !== '')) {
+      const dealVal = parseFloat(lead.dealValue);
+      if (isNaN(dealVal)) return;
+      
+      const expectedNotes = `Deal closed: ${lead.restaurant} [LEAD_LINK:${leadId}]`;
+      
+      if (linkedEntries.length > 0) {
+        const [primary, ...others] = linkedEntries;
+        
+        // Update primary if amount or restaurant name changed
+        if (Math.abs(parseFloat(primary.amount) - dealVal) > 0.01 || !primary.notes.includes(lead.restaurant)) {
+          await expenseStore.updateEntry(primary.id, {
+            amount: dealVal,
+            notes: expectedNotes
+          });
+        }
+        
+        // Clean up any duplicates
+        for (const duplicate of others) {
+          await expenseStore.deleteEntry(duplicate.id);
+        }
+      } else {
+        // Create new entry
+        await expenseStore.addEntry({
+          type: 'revenue',
+          amount: dealVal,
+          category: 'Closed Deal',
+          date: new Date().toISOString(),
+          notes: expectedNotes,
+        });
+      }
+    } else {
+      // Remove all linked entries if no longer closed
+      for (const entry of linkedEntries) {
+        await expenseStore.deleteEntry(entry.id);
+      }
+    }
+  } catch (e) {
+    console.error('Lead revenue sync error:', e);
+  }
+}
 
 export default useLeadStore;
