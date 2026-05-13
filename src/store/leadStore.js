@@ -34,10 +34,10 @@ const useLeadStore = create((set, get) => ({
   },
 
   addLead: async (lead) => {
-    const newLead = { 
-      ...lead, 
-      id: lead.id || crypto.randomUUID(), 
-      created_at: new Date().toISOString() 
+    const newLead = {
+      ...lead,
+      id: lead.id || crypto.randomUUID(),
+      created_at: new Date().toISOString()
     };
     const updatedLeads = [newLead, ...get().leads];
     set({ leads: updatedLeads });

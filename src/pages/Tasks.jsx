@@ -43,6 +43,9 @@ function TaskCard({ task, onEdit, onDelete, isDragging }) {
                 {formatDate(task.deadline)}
               </span>
             )}
+            {task.dealValue > 0 && (
+              <span className="badge text-[10px] text-accent bg-accent/10">₹{task.dealValue}</span>
+            )}
           </div>
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -84,7 +87,7 @@ function KanbanColumn({ column, tasks, onEdit, onDelete, activeId }) {
 }
 
 function TaskModal({ task, onClose, onSave }) {
-  const [form, setForm] = useState(task || { title: '', description: '', priority: 'medium', status: 'todo', category: '', deadline: '' });
+  const [form, setForm] = useState(task || { title: '', description: '', priority: 'medium', status: 'todo', category: '', deadline: '', dealValue: '' });
 
   return (
     <AnimatePresence>
@@ -127,6 +130,10 @@ function TaskModal({ task, onClose, onSave }) {
               </select>
               <input type="date" className="input-glass" value={form.deadline}
                 onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              <input type="number" className="input-glass" placeholder="Deal Value (₹) - optional" value={form.dealValue}
+                onChange={(e) => setForm({ ...form, dealValue: e.target.value })} />
             </div>
             <button onClick={() => { if (form.title) { onSave(form); onClose(); } }} className="btn-accent w-full">
               {task ? 'Update Task' : 'Create Task'}
@@ -243,6 +250,7 @@ export default function Tasks() {
                   <th className="text-left px-4 py-3 text-text-muted font-medium text-xs uppercase">Task</th>
                   <th className="text-left px-4 py-3 text-text-muted font-medium text-xs uppercase hidden sm:table-cell">Priority</th>
                   <th className="text-left px-4 py-3 text-text-muted font-medium text-xs uppercase hidden md:table-cell">Status</th>
+                  <th className="text-left px-4 py-3 text-text-muted font-medium text-xs uppercase hidden lg:table-cell">Value</th>
                   <th className="text-left px-4 py-3 text-text-muted font-medium text-xs uppercase hidden lg:table-cell">Deadline</th>
                   <th className="px-4 py-3"></th>
                 </tr>
@@ -261,6 +269,9 @@ export default function Tasks() {
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         <span className="badge text-xs text-text-secondary bg-white/5">{task.status}</span>
+                      </td>
+                      <td className="px-4 py-3 text-xs hidden lg:table-cell text-accent font-medium">
+                        {task.dealValue ? `₹${task.dealValue}` : '—'}
                       </td>
                       <td className={`px-4 py-3 text-xs hidden lg:table-cell ${isOverdue(task.deadline) && task.status !== 'done' ? 'text-red-400' : 'text-text-muted'}`}>
                         {formatDate(task.deadline)}
