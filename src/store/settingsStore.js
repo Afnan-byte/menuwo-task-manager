@@ -15,26 +15,26 @@ const useSettingsStore = create((set, get) => ({
     if (!isSupabaseConfigured) return;
     set({ loading: true });
     
-    // Fetch profile
+    // Fetch profile (use limit 1 instead of single to avoid 406/404 errors on empty tables)
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .single();
+      .limit(1);
     
-    if (!profileError && profileData) {
-      set({ profile: profileData });
-      lsSet('menuwo_profile', profileData);
+    if (!profileError && profileData && profileData.length > 0) {
+      set({ profile: profileData[0] });
+      lsSet('menuwo_profile', profileData[0]);
     }
 
     // Fetch notifications
     const { data: notifData, error: notifError } = await supabase
       .from('notifications')
       .select('*')
-      .single();
+      .limit(1);
     
-    if (!notifError && notifData) {
-      set({ notifications: notifData });
-      lsSet('menuwo_notif', notifData);
+    if (!notifError && notifData && notifData.length > 0) {
+      set({ notifications: notifData[0] });
+      lsSet('menuwo_notif', notifData[0]);
     }
 
     set({ loading: false });
