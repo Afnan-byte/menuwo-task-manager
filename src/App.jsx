@@ -19,6 +19,7 @@ import useExpenseStore from './store/expenseStore';
 import useContentStore from './store/contentStore';
 import useNoteStore from './store/noteStore';
 import useOrderStore from './store/orderStore';
+import useSettingsStore from './store/settingsStore';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -50,6 +51,7 @@ function AppLayout() {
   const fetchItems = useContentStore((s) => s.fetchItems);
   const fetchNotes = useNoteStore((s) => s.fetchNotes);
   const fetchOrders = useOrderStore((s) => s.fetchOrders);
+  const fetchSettings = useSettingsStore((s) => s.fetchSettings);
 
   useEffect(() => {
     fetchTasks();
@@ -58,6 +60,7 @@ function AppLayout() {
     fetchItems();
     fetchNotes();
     fetchOrders();
+    fetchSettings();
   }, []);
 
   // Keyboard shortcut: Ctrl+K for quick search

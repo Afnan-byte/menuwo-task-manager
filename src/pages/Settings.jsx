@@ -5,22 +5,14 @@ import PageWrapper from '../components/layout/PageWrapper';
 import { lsGetObj, lsSet } from '../lib/localStorage';
 
 
+import useSettingsStore from '../store/settingsStore';
+
+
 export default function Settings() {
   const [saved, setSaved] = useState(false);
-  const [profile, setProfile] = useState(() => lsGetObj('menuwo_profile', {
-    name: 'Afnan', business: 'Menuwo', email: 'info@menuwo.in', role: 'Founder & CEO'
-  }));
-  const [supabase, setSupabase] = useState(() => lsGetObj('menuwo_supabase', {
-    url: import.meta.env.VITE_SUPABASE_URL || '', key: ''
-  }));
-  const [notifications, setNotifications] = useState(() => lsGetObj('menuwo_notif', {
-    overdueTasks: true, leadFollowups: true, dailyBriefing: true
-  }));
+  const { profile, updateProfile, notifications, updateNotifications } = useSettingsStore();
 
   const handleSave = () => {
-    lsSet('menuwo_profile', profile);
-    lsSet('menuwo_supabase', supabase);
-    lsSet('menuwo_notif', notifications);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -55,22 +47,22 @@ export default function Settings() {
               <div>
                 <label className="text-xs text-text-muted mb-1 block">Full Name</label>
                 <input className="input-glass" value={profile.name}
-                  onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
+                  onChange={(e) => updateProfile({ name: e.target.value })} />
               </div>
               <div>
                 <label className="text-xs text-text-muted mb-1 block">Business Name</label>
                 <input className="input-glass" value={profile.business}
-                  onChange={(e) => setProfile({ ...profile, business: e.target.value })} />
+                  onChange={(e) => updateProfile({ business: e.target.value })} />
               </div>
               <div>
                 <label className="text-xs text-text-muted mb-1 block">Email</label>
                 <input className="input-glass" type="email" value={profile.email}
-                  onChange={(e) => setProfile({ ...profile, email: e.target.value })} />
+                  onChange={(e) => updateProfile({ email: e.target.value })} />
               </div>
               <div>
                 <label className="text-xs text-text-muted mb-1 block">Role</label>
                 <input className="input-glass" value={profile.role}
-                  onChange={(e) => setProfile({ ...profile, role: e.target.value })} />
+                  onChange={(e) => updateProfile({ role: e.target.value })} />
               </div>
             </div>
           </div>
@@ -123,7 +115,7 @@ export default function Settings() {
                     <p className="text-xs text-text-muted">{desc}</p>
                   </div>
                   <button
-                    onClick={() => setNotifications({ ...notifications, [key]: !notifications[key] })}
+                    onClick={() => updateNotifications({ [key]: !notifications[key] })}
                     className={`w-10 h-5 rounded-full transition-all relative flex-shrink-0 ${notifications[key] ? 'bg-accent' : 'bg-white/10'}`}
                     style={notifications[key] ? { boxShadow: '0 0 8px rgba(57,211,0,0.4)' } : {}}>
                     <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${notifications[key] ? 'left-5' : 'left-0.5'}`} />
