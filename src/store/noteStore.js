@@ -17,6 +17,17 @@ const useNoteStore = create((set, get) => ({
     set({ loading: false });
   },
 
+  subscribeToChanges: () => {
+    if (!isSupabaseConfigured) return;
+    const channel = supabase
+      .channel('notes-realtime')
+      .on('postgres_changes', { event: '*', table: 'notes' }, () => {
+        get().fetchNotes();
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  },
+
   addNote: async (note) => {
     const newNote = { 
       ...note, 

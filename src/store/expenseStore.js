@@ -17,6 +17,17 @@ const useExpenseStore = create((set, get) => ({
     set({ loading: false });
   },
 
+  subscribeToChanges: () => {
+    if (!isSupabaseConfigured) return;
+    const channel = supabase
+      .channel('expenses-realtime')
+      .on('postgres_changes', { event: '*', table: 'expenses' }, () => {
+        get().fetchEntries();
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  },
+
   addEntry: async (entry) => {
     const newEntry = { 
       ...entry, 

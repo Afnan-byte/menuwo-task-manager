@@ -17,6 +17,17 @@ const useTaskStore = create((set, get) => ({
     set({ loading: false });
   },
 
+  subscribeToChanges: () => {
+    if (!isSupabaseConfigured) return;
+    const channel = supabase
+      .channel('tasks-realtime')
+      .on('postgres_changes', { event: '*', table: 'tasks' }, () => {
+        get().fetchTasks();
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  },
+
   addTask: async (task) => {
     const newTask = { 
       ...task, 

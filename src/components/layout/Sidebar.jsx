@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { isSupabaseConfigured } from '../../lib/supabase';
 import {
   LayoutDashboard, CheckSquare, Users, DollarSign,
   Calendar, FileText, Package, BarChart2, Sparkles,
@@ -25,8 +26,12 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center justify-center py-8 border-b border-white/5">
-        <img src="/logo.png" alt="Menuwo Logo" className="w-32 h-auto object-contain" />
+      <div className="flex flex-col items-center justify-center py-6 border-b border-white/5 gap-2">
+        <img src="/logo.png" alt="Menuwo Logo" className="w-28 h-auto object-contain" />
+        <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider ${isSupabaseConfigured ? 'bg-accent/10 text-accent' : 'bg-white/5 text-text-muted'}`}>
+          <div className={`w-1 h-1 rounded-full ${isSupabaseConfigured ? 'bg-accent animate-pulse' : 'bg-text-muted'}`} />
+          {isSupabaseConfigured ? 'Cloud Sync Active' : 'Local Only'}
+        </div>
       </div>
 
       {/* Nav */}

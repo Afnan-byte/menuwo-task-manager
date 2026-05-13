@@ -17,6 +17,17 @@ const useOrderStore = create((set, get) => ({
     set({ loading: false });
   },
 
+  subscribeToChanges: () => {
+    if (!isSupabaseConfigured) return;
+    const channel = supabase
+      .channel('orders-realtime')
+      .on('postgres_changes', { event: '*', table: 'orders' }, () => {
+        get().fetchOrders();
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  },
+
   addOrder: async (order) => {
     const newOrder = { 
       ...order, 

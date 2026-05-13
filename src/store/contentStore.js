@@ -17,6 +17,17 @@ const useContentStore = create((set, get) => ({
     set({ loading: false });
   },
 
+  subscribeToChanges: () => {
+    if (!isSupabaseConfigured) return;
+    const channel = supabase
+      .channel('content-realtime')
+      .on('postgres_changes', { event: '*', table: 'content' }, () => {
+        get().fetchItems();
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  },
+
   addItem: async (item) => {
     const newItem = { 
       ...item, 

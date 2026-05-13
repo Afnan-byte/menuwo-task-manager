@@ -17,6 +17,17 @@ const useLeadStore = create((set, get) => ({
     set({ loading: false });
   },
 
+  subscribeToChanges: () => {
+    if (!isSupabaseConfigured) return;
+    const channel = supabase
+      .channel('leads-realtime')
+      .on('postgres_changes', { event: '*', table: 'leads' }, () => {
+        get().fetchLeads();
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  },
+
   addLead: async (lead) => {
     const newLead = { 
       ...lead, 

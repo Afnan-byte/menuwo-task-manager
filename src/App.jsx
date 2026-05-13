@@ -54,6 +54,13 @@ function AppLayout() {
   const fetchOrders = useOrderStore((s) => s.fetchOrders);
   const fetchSettings = useSettingsStore((s) => s.fetchSettings);
 
+  const subTasks = useTaskStore((s) => s.subscribeToChanges);
+  const subLeads = useLeadStore((s) => s.subscribeToChanges);
+  const subExpenses = useExpenseStore((s) => s.subscribeToChanges);
+  const subContent = useContentStore((s) => s.subscribeToChanges);
+  const subNotes = useNoteStore((s) => s.subscribeToChanges);
+  const subOrders = useOrderStore((s) => s.subscribeToChanges);
+
   useEffect(() => {
     const initData = async () => {
       // 1. Capture local data BEFORE fetching from Supabase
@@ -97,6 +104,23 @@ function AppLayout() {
           }
         }
       }
+
+      // 4. Setup real-time subscriptions
+      const unsubTasks = subTasks();
+      const unsubLeads = subLeads();
+      const unsubExpenses = subExpenses();
+      const unsubContent = subContent();
+      const unsubNotes = subNotes();
+      const unsubOrders = subOrders();
+
+      return () => {
+        unsubTasks?.();
+        unsubLeads?.();
+        unsubExpenses?.();
+        unsubContent?.();
+        unsubNotes?.();
+        unsubOrders?.();
+      };
     };
 
     initData();
