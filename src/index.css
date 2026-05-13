@@ -38,11 +38,11 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(57, 211, 0, 0.4);
+    background: rgba(25, 111, 1, 0.4);
   }
 
   ::selection {
-    background: rgba(57, 211, 0, 0.25);
+    background: rgba(25, 111, 1, 0.25);
     color: #fff;
   }
 }
@@ -62,23 +62,21 @@
   }
 
   .glass-card-accent {
-    background: rgba(57, 211, 0, 0.05);
-    border: 1px solid rgba(57, 211, 0, 0.2);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(25, 111, 1, 0.05);
+    border: 1px solid rgba(25, 111, 1, 0.2);
     border-radius: 16px;
   }
 
   /* Neon button */
   .btn-accent {
-    @apply bg-accent text-black font-semibold rounded-xl px-4 py-2 text-sm;
+    @apply bg-accent text-white font-semibold rounded-xl px-4 py-2 text-sm;
     transition: all 0.2s ease;
-    box-shadow: 0 0 16px rgba(57, 211, 0, 0.3);
+    box-shadow: 0 0 16px rgba(25, 111, 1, 0.3);
   }
 
   .btn-accent:hover {
     @apply bg-accent-hover;
-    box-shadow: 0 0 28px rgba(57, 211, 0, 0.5);
+    box-shadow: 0 0 28px rgba(25, 111, 1, 0.5);
     transform: translateY(-1px);
   }
 
@@ -125,7 +123,7 @@
 
   /* Glow text */
   .text-glow {
-    text-shadow: 0 0 20px rgba(57, 211, 0, 0.6);
+    text-shadow: 0 0 20px rgba(25, 111, 1, 0.6);
   }
 
   /* Skeleton loader */
@@ -154,7 +152,7 @@
 
   /* Stat card glow */
   .stat-glow {
-    box-shadow: 0 0 20px rgba(57, 211, 0, 0.05);
+    box-shadow: 0 0 20px rgba(25, 111, 1, 0.05);
   }
 
   /* Sidebar nav item */

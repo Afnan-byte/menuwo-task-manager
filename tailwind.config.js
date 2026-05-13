@@ -8,10 +8,10 @@ export default {
     extend: {
       colors: {
         accent: {
-          DEFAULT: '#39D300',
-          dim: 'rgba(57,211,0,0.15)',
-          glow: 'rgba(57,211,0,0.3)',
-          hover: '#45FF00',
+          DEFAULT: '#196F01',
+          dim: 'rgba(25,111,1,0.15)',
+          glow: 'rgba(25,111,1,0.3)',
+          hover: '#1e8501',
         },
         bg: {
           primary: '#060608',
@@ -40,7 +40,7 @@ export default {
           contacted: '#3b82f6',
           demo: '#f59e0b',
           negotiation: '#ef4444',
-          closed: '#39D300',
+          closed: '#196F01',
         },
       },
       fontFamily: {
@@ -54,9 +54,9 @@ export default {
         xl: '40px',
       },
       boxShadow: {
-        'glow-sm': '0 0 10px rgba(57,211,0,0.15)',
-        'glow': '0 0 20px rgba(57,211,0,0.25)',
-        'glow-lg': '0 0 40px rgba(57,211,0,0.3)',
+        'glow-sm': '0 0 10px rgba(25,111,1,0.15)',
+        'glow': '0 0 20px rgba(25,111,1,0.25)',
+        'glow-lg': '0 0 40px rgba(25,111,1,0.3)',
         'card': '0 4px 24px rgba(0,0,0,0.4)',
         'card-hover': '0 8px 32px rgba(0,0,0,0.6)',
       },
