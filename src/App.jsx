@@ -20,6 +20,7 @@ import useContentStore from './store/contentStore';
 import useNoteStore from './store/noteStore';
 import useOrderStore from './store/orderStore';
 import useSettingsStore from './store/settingsStore';
+import { lsGet, LS_KEYS } from './lib/localStorage';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -55,7 +56,17 @@ function AppLayout() {
 
   useEffect(() => {
     const initData = async () => {
-      // Fetch all data
+      // 1. Capture local data BEFORE fetching from Supabase
+      const localBackups = {
+        tasks: lsGet(LS_KEYS.TASKS),
+        leads: lsGet(LS_KEYS.LEADS),
+        expenses: lsGet(LS_KEYS.EXPENSES),
+        content: lsGet(LS_KEYS.CONTENT),
+        notes: lsGet(LS_KEYS.NOTES),
+        orders: lsGet(LS_KEYS.ORDERS),
+      };
+
+      // 2. Fetch all data from Supabase
       await Promise.all([
         fetchTasks(),
         fetchLeads(),
@@ -66,24 +77,22 @@ function AppLayout() {
         fetchSettings()
       ]);
 
-      // Simple Migration: If Supabase is configured but empty, and we have local data, upload it.
-      // Note: This is a basic implementation. For production, more robust conflict resolution is needed.
+      // 3. Migration: If Supabase is empty but local had data, upload it
       const stores = [
-        { name: 'tasks', data: useTaskStore.getState().tasks, add: useTaskStore.getState().addTask },
-        { name: 'leads', data: useLeadStore.getState().leads, add: useLeadStore.getState().addLead },
-        { name: 'expenses', data: useExpenseStore.getState().entries, add: useExpenseStore.getState().addEntry },
-        { name: 'content', data: useContentStore.getState().items, add: useContentStore.getState().addItem },
-        { name: 'notes', data: useNoteStore.getState().notes, add: useNoteStore.getState().addNote },
-        { name: 'orders', data: useOrderStore.getState().orders, add: useOrderStore.getState().addOrder },
+        { key: 'tasks', current: useTaskStore.getState().tasks, add: useTaskStore.getState().addTask },
+        { key: 'leads', current: useLeadStore.getState().leads, add: useLeadStore.getState().addLead },
+        { key: 'expenses', current: useExpenseStore.getState().entries, add: useExpenseStore.getState().addEntry },
+        { key: 'content', current: useContentStore.getState().items, add: useContentStore.getState().addItem },
+        { key: 'notes', current: useNoteStore.getState().notes, add: useNoteStore.getState().addNote },
+        { key: 'orders', current: useOrderStore.getState().orders, add: useOrderStore.getState().addOrder },
       ];
 
       for (const store of stores) {
-        // If local storage has data but we fetched nothing from Supabase, upload local data
-        // We check if data exists in LS but not in the state after fetch
-        const lsData = JSON.parse(localStorage.getItem(`menuwo_${store.name}`) || '[]');
-        if (lsData.length > 0 && store.data.length === 0) {
-          console.log(`Migrating ${store.name} to Supabase...`);
-          for (const item of lsData) {
+        const localData = localBackups[store.key];
+        // If Supabase returned nothing but we had local data, migrate it
+        if (localData.length > 0 && store.current.length === 0) {
+          console.log(`Migrating ${store.key} to Supabase...`);
+          for (const item of localData) {
             await store.add(item);
           }
         }
