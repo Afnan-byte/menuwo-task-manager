@@ -171,11 +171,11 @@ export default function Content() {
         </div>
 
         {/* Pipeline columns */}
-        <div className="flex gap-4 mobile-scroll-x pb-4 px-1">
+        <div className="flex flex-col md:flex-row gap-4 px-1 pb-4">
           {CONTENT_STATUS.map((stage) => {
             const stageItems = filtered.filter((i) => i.status === stage.id);
             return (
-              <div key={stage.id} className="kanban-column flex flex-col">
+              <div key={stage.id} className="w-full md:w-72 flex-shrink-0 flex flex-col glass-card overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
                   <span className="text-sm">{stage.label}</span>
                   <span className="ml-auto text-xs text-text-muted">{stageItems.length}</span>

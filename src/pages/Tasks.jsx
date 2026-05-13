@@ -58,7 +58,7 @@ function KanbanColumn({ column, tasks, onEdit, onDelete, activeId }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
   return (
-    <div className="kanban-column flex flex-col" ref={setNodeRef}
+    <div className="w-full md:w-80 flex-shrink-0 flex flex-col glass-card overflow-hidden" ref={setNodeRef}
       style={{ borderColor: isOver ? column.color + '40' : undefined, boxShadow: isOver ? `0 0 20px ${column.color}15` : undefined }}>
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
         <div className="flex items-center gap-2">
@@ -219,7 +219,7 @@ export default function Tasks() {
         {/* Kanban / List */}
         {view === 'kanban' ? (
           <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-            <div className="flex gap-4 mobile-scroll-x pb-4 px-1">
+            <div className="flex flex-col md:flex-row gap-4 pb-4 px-1">
               {COLUMNS.map((col) => (
                 <KanbanColumn
                   key={col.id}

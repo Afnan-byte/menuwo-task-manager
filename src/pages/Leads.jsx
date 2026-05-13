@@ -205,11 +205,11 @@ export default function Leads() {
 
         {/* Pipeline view */}
         {activeTab === 'pipeline' ? (
-            <div className="flex gap-4 mobile-scroll-x pb-4 px-1">
+          <div className="flex flex-col md:flex-row gap-4 pb-4 px-1">
             {PIPELINE.map((stage) => {
               const stageLeads = filtered.filter((l) => l.status === stage.id);
               return (
-                <div key={stage.id} className="kanban-column flex flex-col">
+                <div key={stage.id} className="w-full md:w-72 flex-shrink-0 flex flex-col glass-card overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stage.color }} />
                     <span className="text-sm font-semibold text-white">{stage.label}</span>
