@@ -1,16 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Palette, Bell, Save, Check, Database, KeyRound } from 'lucide-react';
+import { User, Bell, Save, Check, Database, KeyRound } from 'lucide-react';
 import PageWrapper from '../components/layout/PageWrapper';
 import { lsGetObj, lsSet } from '../lib/localStorage';
 
-const ACCENT_PRESETS = [
-  { label: 'Forest Green', value: '#196F01' },
-  { label: 'Electric Blue', value: '#0ea5e9' },
-  { label: 'Purple', value: '#a855f7' },
-  { label: 'Orange', value: '#f97316' },
-  { label: 'Pink', value: '#ec4899' },
-];
 
 export default function Settings() {
   const [saved, setSaved] = useState(false);
@@ -82,28 +75,7 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Theme */}
-          <div className="glass-card p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Palette className="text-accent" size={16} />
-              <h3 className="text-sm font-semibold text-white">Theme</h3>
-            </div>
-            <p className="text-xs text-text-muted mb-3">Accent Color</p>
-            <div className="flex flex-wrap gap-3">
-              {ACCENT_PRESETS.map((preset) => (
-                <button key={preset.value}
-                  className="flex flex-col items-center gap-1.5 group"
-                  onClick={() => document.documentElement.style.setProperty('--accent-override', preset.value)}>
-                  <div className="w-8 h-8 rounded-xl shadow-lg group-hover:scale-110 transition-transform"
-                    style={{ backgroundColor: preset.value, boxShadow: `0 0 12px ${preset.value}50` }} />
-                  <span className="text-[10px] text-text-muted group-hover:text-white transition-colors">{preset.label}</span>
-                </button>
-              ))}
-            </div>
-            <p className="text-[10px] text-text-muted mt-3">
-              Full theme engine coming in v2 — currently Forest Green (#196F01) is the active theme.
-            </p>
-          </div>
+          {/* Theme removed */}
 
           {/* Supabase */}
           <div className="glass-card p-5">
