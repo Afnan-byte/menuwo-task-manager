@@ -25,24 +25,8 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/5">
-        <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 shadow-glow">
-          <img src="/logo.svg" alt="Menuwo Logo" className="w-full h-full object-cover" />
-        </div>
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.div
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
-              className="overflow-hidden whitespace-nowrap"
-            >
-              <span className="font-bold text-white text-lg tracking-tight">Menuwo</span>
-              <span className="text-accent font-bold text-lg">.</span>
-              <p className="text-text-muted text-[10px] font-medium tracking-widest uppercase">Business OS</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div className="flex items-center justify-center py-6 border-b border-white/5">
+        <img src="/logo.svg" alt="Menuwo Logo" className="w-10 h-10 object-contain" />
       </div>
 
       {/* Nav */}
