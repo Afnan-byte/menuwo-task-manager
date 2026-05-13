@@ -54,6 +54,9 @@ const useContentStore = create((set, get) => ({
       if (error) console.error('Supabase error:', error);
     }
   },
+
+  getByStatus: (status) => get().items.filter((i) => i.status === status),
+  getByType: (type) => get().items.filter((i) => i.type === type),
 }));
 
 export default useContentStore;

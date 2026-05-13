@@ -26,8 +26,8 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-function EntryModal({ onClose, onSave }) {
-  const [form, setForm] = useState({ type: 'expense', amount: '', category: 'Marketing', date: new Date().toISOString().split('T')[0], notes: '' });
+function EntryModal({ entry, onClose, onSave }) {
+  const [form, setForm] = useState(entry || { type: 'expense', amount: '', category: 'Marketing', date: new Date().toISOString().split('T')[0], notes: '' });
 
   return (
     <AnimatePresence>
@@ -37,7 +37,7 @@ function EntryModal({ onClose, onSave }) {
           className="glass-card w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}
           style={{ boxShadow: '0 0 40px rgba(57,211,0,0.1), 0 20px 60px rgba(0,0,0,0.6)' }}>
           <div className="flex justify-between mb-5">
-            <h2 className="font-semibold text-white">Add Entry</h2>
+            <h2 className="font-semibold text-white">{entry ? 'Edit Entry' : 'Add Entry'}</h2>
             <button onClick={onClose} className="text-text-muted hover:text-white"><X size={18} /></button>
           </div>
           <div className="space-y-3">
@@ -64,7 +64,7 @@ function EntryModal({ onClose, onSave }) {
             <input className="input-glass" placeholder="Notes (optional)" value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             <button onClick={() => { if (form.amount) { onSave(form); onClose(); } }} className="btn-accent w-full">
-              Add Entry
+              {entry ? 'Update Entry' : 'Add Entry'}
             </button>
           </div>
         </motion.div>
@@ -74,8 +74,9 @@ function EntryModal({ onClose, onSave }) {
 }
 
 export default function Expenses() {
-  const { entries, addEntry, deleteEntry } = useExpenseStore();
+  const { entries, addEntry, updateEntry, deleteEntry } = useExpenseStore();
   const [showModal, setShowModal] = useState(false);
+  const [editEntry, setEditEntry] = useState(null);
   const [filter, setFilter] = useState('all');
 
   // Compute derived values locally
@@ -100,6 +101,12 @@ export default function Expenses() {
   const byCategory = Object.entries(catMap).map(([name, value]) => ({ name, value }));
 
   const filtered = filter === 'all' ? entries : entries.filter((e) => e.type === filter);
+
+  const handleSave = (form) => {
+    if (editEntry) updateEntry(editEntry.id, form);
+    else addEntry(form);
+    setEditEntry(null);
+  };
 
   return (
     <PageWrapper>
@@ -210,10 +217,16 @@ export default function Expenses() {
                       <td className="px-4 py-3 text-text-muted text-xs">{formatDate(entry.date)}</td>
                       <td className="px-4 py-3 text-text-muted text-xs max-w-[200px] truncate">{entry.notes || '—'}</td>
                       <td className="px-4 py-3">
-                        <button onClick={() => deleteEntry(entry.id)}
-                          className="p-1.5 text-text-muted hover:text-red-400 transition-colors">
-                          <Trash2 size={13} />
-                        </button>
+                        <div className="flex gap-1">
+                          <button onClick={() => { setEditEntry(entry); setShowModal(true); }}
+                            className="p-1.5 text-text-muted hover:text-white transition-colors">
+                            <Edit2 size={13} />
+                          </button>
+                          <button onClick={() => deleteEntry(entry.id)}
+                            className="p-1.5 text-text-muted hover:text-red-400 transition-colors">
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </td>
                     </motion.tr>
                   ))}
@@ -230,7 +243,7 @@ export default function Expenses() {
         </div>
       </div>
 
-      {showModal && <EntryModal onClose={() => setShowModal(false)} onSave={addEntry} />}
+      {showModal && <EntryModal entry={editEntry} onClose={() => { setShowModal(false); setEditEntry(null); }} onSave={handleSave} />}
     </PageWrapper>
   );
 }

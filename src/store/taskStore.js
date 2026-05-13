@@ -23,8 +23,6 @@ const useTaskStore = create((set, get) => ({
       id: task.id || crypto.randomUUID(), 
       created_at: new Date().toISOString() 
     };
-    
-    // Optimistic UI update
     const updatedTasks = [newTask, ...get().tasks];
     set({ tasks: updatedTasks });
     lsSet(LS_KEYS.TASKS, updatedTasks);

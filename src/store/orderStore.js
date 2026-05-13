@@ -54,6 +54,17 @@ const useOrderStore = create((set, get) => ({
       if (error) console.error('Supabase error:', error);
     }
   },
+
+  getStats: () => {
+    const orders = get().orders;
+    return {
+      total: orders.length,
+      pending: orders.filter((o) => o.status === 'pending').length,
+      inProgress: orders.filter((o) => o.status === 'in-progress').length,
+      shipped: orders.filter((o) => o.status === 'shipped').length,
+      delivered: orders.filter((o) => o.status === 'delivered').length,
+    };
+  },
 }));
 
 export default useOrderStore;

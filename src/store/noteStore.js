@@ -70,6 +70,11 @@ const useNoteStore = create((set, get) => ({
       if (error) console.error('Supabase error:', error);
     }
   },
+
+  getSorted: () => {
+    const notes = get().notes;
+    return [...notes].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+  },
 }));
 
 export default useNoteStore;
