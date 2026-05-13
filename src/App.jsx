@@ -13,6 +13,12 @@ import Orders from './pages/Orders';
 import Analytics from './pages/Analytics';
 import AIAssistant from './pages/AIAssistant';
 import Settings from './pages/Settings';
+import useTaskStore from './store/taskStore';
+import useLeadStore from './store/leadStore';
+import useExpenseStore from './store/expenseStore';
+import useContentStore from './store/contentStore';
+import useNoteStore from './store/noteStore';
+import useOrderStore from './store/orderStore';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -37,6 +43,22 @@ function AnimatedRoutes() {
 function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const fetchTasks = useTaskStore((s) => s.fetchTasks);
+  const fetchLeads = useLeadStore((s) => s.fetchLeads);
+  const fetchEntries = useExpenseStore((s) => s.fetchEntries);
+  const fetchItems = useContentStore((s) => s.fetchItems);
+  const fetchNotes = useNoteStore((s) => s.fetchNotes);
+  const fetchOrders = useOrderStore((s) => s.fetchOrders);
+
+  useEffect(() => {
+    fetchTasks();
+    fetchLeads();
+    fetchEntries();
+    fetchItems();
+    fetchNotes();
+    fetchOrders();
+  }, []);
 
   // Keyboard shortcut: Ctrl+K for quick search
   useEffect(() => {
