@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { Plus, X, TrendingUp, TrendingDown, Minus, Trash2 } from 'lucide-react';
+import { Plus, X, TrendingUp, TrendingDown, Minus, Trash2, Edit2 } from 'lucide-react';
 import PageWrapper from '../components/layout/PageWrapper';
 import useExpenseStore from '../store/expenseStore';
 import { formatCurrency, formatDate } from '../lib/utils';
