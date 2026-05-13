@@ -171,7 +171,7 @@ export default function Content() {
         </div>
 
         {/* Pipeline columns */}
-        <div className="flex flex-col md:flex-row gap-4 px-1 pb-4">
+        <div className="flex flex-col md:flex-row flex-wrap gap-4 px-1 pb-4">
           {CONTENT_STATUS.map((stage) => {
             const stageItems = filtered.filter((i) => i.status === stage.id);
             return (

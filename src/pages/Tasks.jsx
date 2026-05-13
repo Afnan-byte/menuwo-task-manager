@@ -219,7 +219,7 @@ export default function Tasks() {
         {/* Kanban / List */}
         {view === 'kanban' ? (
           <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-            <div className="flex flex-col md:flex-row gap-4 pb-4 px-1">
+            <div className="flex flex-col md:flex-row flex-wrap gap-4 pb-4 px-1">
               {COLUMNS.map((col) => (
                 <KanbanColumn
                   key={col.id}

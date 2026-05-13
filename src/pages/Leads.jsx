@@ -205,7 +205,7 @@ export default function Leads() {
 
         {/* Pipeline view */}
         {activeTab === 'pipeline' ? (
-          <div className="flex flex-col md:flex-row gap-4 pb-4 px-1">
+          <div className="flex flex-col md:flex-row flex-wrap gap-4 pb-4 px-1">
             {PIPELINE.map((stage) => {
               const stageLeads = filtered.filter((l) => l.status === stage.id);
               return (
