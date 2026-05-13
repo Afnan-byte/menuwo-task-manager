@@ -103,6 +103,7 @@ const useLeadStore = create((set, get) => ({
   },
 
   moveLead: async (id, newStatus) => {
+    const lead = get().leads.find((l) => l.id === id);
     const updatedLeads = get().leads.map((l) => (l.id === id ? { ...l, status: newStatus } : l));
     set({ leads: updatedLeads });
     lsSet(LS_KEYS.LEADS, updatedLeads);
@@ -110,6 +111,18 @@ const useLeadStore = create((set, get) => ({
     if (isSupabaseConfigured) {
       const { error } = await supabase.from('leads').update({ status: newStatus }).eq('id', id);
       if (error) console.error('Supabase error:', error);
+    }
+
+    // Auto-add revenue when deal is closed
+    if (newStatus === 'closed' && lead && lead.dealValue) {
+      const { default: useExpenseStore } = await import('./expenseStore');
+      useExpenseStore.getState().addEntry({
+        type: 'revenue',
+        amount: parseFloat(lead.dealValue) || 0,
+        category: 'Closed Deal',
+        date: new Date().toISOString(),
+        notes: `Deal closed: ${lead.restaurant}`,
+      });
     }
   },
 }));
