@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { lsGetObj, lsSet, LS_KEYS } from '../lib/localStorage';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
+const PROFILE_ID = '00000000-0000-0000-0000-000000000001';
+const NOTIF_ID = '00000000-0000-0000-0000-000000000002';
+
 const useSettingsStore = create((set, get) => ({
   profile: lsGetObj('menuwo_profile', {
     name: 'Afnan', business: 'Menuwo', email: 'info@menuwo.in', role: 'Founder & CEO'
@@ -15,10 +18,11 @@ const useSettingsStore = create((set, get) => ({
     if (!isSupabaseConfigured) return;
     set({ loading: true });
     
-    // Fetch profile (use limit 1 instead of single to avoid 406/404 errors on empty tables)
+    // Fetch profile
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
+      .eq('id', PROFILE_ID)
       .limit(1);
     
     if (!profileError && profileData && profileData.length > 0) {
@@ -30,6 +34,7 @@ const useSettingsStore = create((set, get) => ({
     const { data: notifData, error: notifError } = await supabase
       .from('notifications')
       .select('*')
+      .eq('id', NOTIF_ID)
       .limit(1);
     
     if (!notifError && notifData && notifData.length > 0) {
@@ -47,7 +52,7 @@ const useSettingsStore = create((set, get) => ({
   },
 
   updateProfile: async (updates) => {
-    const newProfile = { ...get().profile, ...updates };
+    const newProfile = { ...get().profile, ...updates, id: PROFILE_ID };
     set({ profile: newProfile });
     lsSet('menuwo_profile', newProfile);
 
@@ -58,7 +63,7 @@ const useSettingsStore = create((set, get) => ({
   },
 
   updateNotifications: async (updates) => {
-    const newNotifs = { ...get().notifications, ...updates };
+    const newNotifs = { ...get().notifications, ...updates, id: NOTIF_ID };
     set({ notifications: newNotifs });
     lsSet('menuwo_notif', newNotifs);
 
@@ -69,6 +74,7 @@ const useSettingsStore = create((set, get) => ({
         overdue_tasks: newNotifs.overdueTasks,
         lead_followups: newNotifs.leadFollowups,
         daily_briefing: newNotifs.dailyBriefing,
+        id: NOTIF_ID
       };
       delete dbNotifs.overdueTasks;
       delete dbNotifs.leadFollowups;
