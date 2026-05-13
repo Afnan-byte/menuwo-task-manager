@@ -122,7 +122,7 @@ export default function Expenses() {
         </div>
 
         {/* Summary cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
           {[
             { label: 'Total Revenue', value: summary.revenue, icon: TrendingUp, color: 'accent', textColor: 'text-accent' },
             { label: 'Total Expenses', value: summary.expenses, icon: TrendingDown, color: 'red', textColor: 'text-red-400' },
