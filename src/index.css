@@ -69,15 +69,17 @@
 
   /* Neon button */
   .btn-accent {
-    @apply bg-accent text-white font-semibold rounded-xl px-4 py-2 text-sm;
+    background: linear-gradient(135deg, #196F01, #1e8501);
+    @apply text-white font-semibold rounded-xl px-4 py-2 text-sm;
     transition: all 0.2s ease;
-    box-shadow: 0 0 16px rgba(25, 111, 1, 0.3);
+    box-shadow: 0 4px 12px rgba(25, 111, 1, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(25, 111, 1, 0.4);
   }
 
   .btn-accent:hover {
-    @apply bg-accent-hover;
-    box-shadow: 0 0 28px rgba(25, 111, 1, 0.5);
-    transform: translateY(-1px);
+    filter: brightness(1.1);
+    box-shadow: 0 6px 20px rgba(25, 111, 1, 0.4);
+    transform: translateY(-1.5px);
   }
 
   .btn-ghost {
