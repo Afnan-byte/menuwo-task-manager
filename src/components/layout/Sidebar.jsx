@@ -26,8 +26,8 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-white/5">
-        <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center flex-shrink-0 shadow-glow">
-          <Zap className="w-4 h-4 text-black" fill="black" />
+        <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 shadow-glow">
+          <img src="/logo.svg" alt="Menuwo Logo" className="w-full h-full object-cover" />
         </div>
         <AnimatePresence>
           {!collapsed && (
