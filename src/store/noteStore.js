@@ -40,7 +40,16 @@ const useNoteStore = create((set, get) => ({
     lsSet(LS_KEYS.NOTES, updatedNotes);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('notes').insert([newNote]);
+      const dbNote = {
+        id: newNote.id,
+        created_at: newNote.created_at,
+        title: newNote.title,
+        content: newNote.content || null,
+        category: newNote.category || null,
+        pinned: newNote.pinned || false,
+        color: newNote.color || null,
+      };
+      const { error } = await supabase.from('notes').insert([dbNote]);
       if (error) console.error('Supabase error:', error);
     }
   },
@@ -51,7 +60,13 @@ const useNoteStore = create((set, get) => ({
     lsSet(LS_KEYS.NOTES, updatedNotes);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('notes').update(updates).eq('id', id);
+      const dbUpdates = {};
+      if (updates.title !== undefined) dbUpdates.title = updates.title;
+      if (updates.content !== undefined) dbUpdates.content = updates.content || null;
+      if (updates.category !== undefined) dbUpdates.category = updates.category || null;
+      if (updates.pinned !== undefined) dbUpdates.pinned = updates.pinned;
+      if (updates.color !== undefined) dbUpdates.color = updates.color || null;
+      const { error } = await supabase.from('notes').update(dbUpdates).eq('id', id);
       if (error) console.error('Supabase error:', error);
     }
   },

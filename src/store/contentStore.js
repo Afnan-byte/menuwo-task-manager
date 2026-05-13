@@ -39,7 +39,16 @@ const useContentStore = create((set, get) => ({
     lsSet(LS_KEYS.CONTENT, updatedItems);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('content').insert([newItem]);
+      const dbItem = {
+        id: newItem.id,
+        created_at: newItem.created_at,
+        title: newItem.title,
+        type: newItem.type || null,
+        status: newItem.status || 'idea',
+        date: (newItem.date !== '' && newItem.date != null) ? newItem.date : null,
+        notes: newItem.notes || null,
+      };
+      const { error } = await supabase.from('content').insert([dbItem]);
       if (error) console.error('Supabase error:', error);
     }
   },
@@ -50,7 +59,13 @@ const useContentStore = create((set, get) => ({
     lsSet(LS_KEYS.CONTENT, updatedItems);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('content').update(updates).eq('id', id);
+      const dbUpdates = {};
+      if (updates.title !== undefined) dbUpdates.title = updates.title;
+      if (updates.type !== undefined) dbUpdates.type = updates.type || null;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.date !== undefined) dbUpdates.date = (updates.date !== '' && updates.date != null) ? updates.date : null;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes || null;
+      const { error } = await supabase.from('content').update(dbUpdates).eq('id', id);
       if (error) console.error('Supabase error:', error);
     }
   },

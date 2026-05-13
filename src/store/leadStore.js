@@ -44,14 +44,21 @@ const useLeadStore = create((set, get) => ({
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
     if (isSupabaseConfigured) {
-      // Map camelCase to snake_case for Supabase
+      // Map camelCase to snake_case and sanitize values for Supabase
+      const dv = newLead.dealValue;
+      const fu = newLead.followUp;
       const dbLead = {
-        ...newLead,
-        deal_value: newLead.dealValue,
-        follow_up: newLead.followUp,
+        id: newLead.id,
+        created_at: newLead.created_at,
+        restaurant: newLead.restaurant,
+        contact: newLead.contact || null,
+        phone: newLead.phone || null,
+        location: newLead.location || null,
+        status: newLead.status || 'lead',
+        deal_value: (dv !== '' && dv != null) ? parseFloat(dv) : 0,
+        follow_up: (fu !== '' && fu != null) ? fu : null,
+        notes: newLead.notes || null,
       };
-      delete dbLead.dealValue;
-      delete dbLead.followUp;
 
       const { error } = await supabase.from('leads').insert([dbLead]);
       if (error) console.error('Supabase error:', error);
@@ -64,15 +71,19 @@ const useLeadStore = create((set, get) => ({
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
     if (isSupabaseConfigured) {
-      // Map camelCase to snake_case for Supabase
-      const dbUpdates = { ...updates };
+      // Build clean update object with only valid DB columns
+      const dbUpdates = {};
+      if (updates.restaurant !== undefined) dbUpdates.restaurant = updates.restaurant;
+      if (updates.contact !== undefined) dbUpdates.contact = updates.contact || null;
+      if (updates.phone !== undefined) dbUpdates.phone = updates.phone || null;
+      if (updates.location !== undefined) dbUpdates.location = updates.location || null;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes || null;
       if (updates.dealValue !== undefined) {
-        dbUpdates.deal_value = updates.dealValue;
-        delete dbUpdates.dealValue;
+        dbUpdates.deal_value = (updates.dealValue !== '' && updates.dealValue != null) ? parseFloat(updates.dealValue) : 0;
       }
       if (updates.followUp !== undefined) {
-        dbUpdates.follow_up = updates.followUp;
-        delete dbUpdates.followUp;
+        dbUpdates.follow_up = (updates.followUp !== '' && updates.followUp != null) ? updates.followUp : null;
       }
 
       const { error } = await supabase.from('leads').update(dbUpdates).eq('id', id);

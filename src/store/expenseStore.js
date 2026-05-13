@@ -39,7 +39,16 @@ const useExpenseStore = create((set, get) => ({
     lsSet(LS_KEYS.EXPENSES, updatedEntries);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('expenses').insert([newEntry]);
+      const dbEntry = {
+        id: newEntry.id,
+        created_at: newEntry.created_at,
+        type: newEntry.type,
+        amount: parseFloat(newEntry.amount) || 0,
+        category: newEntry.category || null,
+        date: (newEntry.date !== '' && newEntry.date != null) ? newEntry.date : null,
+        notes: newEntry.notes || null,
+      };
+      const { error } = await supabase.from('expenses').insert([dbEntry]);
       if (error) console.error('Supabase error:', error);
     }
   },
@@ -50,7 +59,13 @@ const useExpenseStore = create((set, get) => ({
     lsSet(LS_KEYS.EXPENSES, updatedEntries);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('expenses').update(updates).eq('id', id);
+      const dbUpdates = {};
+      if (updates.type !== undefined) dbUpdates.type = updates.type;
+      if (updates.amount !== undefined) dbUpdates.amount = parseFloat(updates.amount) || 0;
+      if (updates.category !== undefined) dbUpdates.category = updates.category || null;
+      if (updates.date !== undefined) dbUpdates.date = (updates.date !== '' && updates.date != null) ? updates.date : null;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes || null;
+      const { error } = await supabase.from('expenses').update(dbUpdates).eq('id', id);
       if (error) console.error('Supabase error:', error);
     }
   },

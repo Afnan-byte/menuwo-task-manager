@@ -43,13 +43,16 @@ const useOrderStore = create((set, get) => ({
     lsSet(LS_KEYS.ORDERS, updatedOrders);
 
     if (isSupabaseConfigured) {
-      // Map camelCase to snake_case for Supabase
       const dbOrder = {
-        ...newOrder,
-        stand_type: newOrder.standType,
+        id: newOrder.id,
+        created_at: newOrder.created_at,
+        client: newOrder.client,
+        stand_type: newOrder.standType || newOrder.stand_type || null,
+        qty: parseInt(newOrder.qty) || 1,
+        status: newOrder.status || 'pending',
+        delivery: (newOrder.delivery !== '' && newOrder.delivery != null) ? newOrder.delivery : null,
+        notes: newOrder.notes || null,
       };
-      delete dbOrder.standType;
-
       const { error } = await supabase.from('orders').insert([dbOrder]);
       if (error) console.error('Supabase error:', error);
     }
@@ -61,13 +64,14 @@ const useOrderStore = create((set, get) => ({
     lsSet(LS_KEYS.ORDERS, updatedOrders);
 
     if (isSupabaseConfigured) {
-      // Map camelCase to snake_case for Supabase
-      const dbUpdates = { ...updates };
-      if (updates.standType !== undefined) {
-        dbUpdates.stand_type = updates.standType;
-        delete dbUpdates.standType;
-      }
-
+      const dbUpdates = {};
+      if (updates.client !== undefined) dbUpdates.client = updates.client;
+      if (updates.standType !== undefined) dbUpdates.stand_type = updates.standType;
+      if (updates.stand_type !== undefined) dbUpdates.stand_type = updates.stand_type;
+      if (updates.qty !== undefined) dbUpdates.qty = parseInt(updates.qty) || 1;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.delivery !== undefined) dbUpdates.delivery = (updates.delivery !== '' && updates.delivery != null) ? updates.delivery : null;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes || null;
       const { error } = await supabase.from('orders').update(dbUpdates).eq('id', id);
       if (error) console.error('Supabase error:', error);
     }

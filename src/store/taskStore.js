@@ -39,7 +39,17 @@ const useTaskStore = create((set, get) => ({
     lsSet(LS_KEYS.TASKS, updatedTasks);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('tasks').insert([newTask]);
+      const dbTask = {
+        id: newTask.id,
+        created_at: newTask.created_at,
+        title: newTask.title,
+        description: newTask.description || null,
+        status: newTask.status || 'todo',
+        priority: newTask.priority || 'medium',
+        deadline: (newTask.deadline !== '' && newTask.deadline != null) ? newTask.deadline : null,
+        category: newTask.category || null,
+      };
+      const { error } = await supabase.from('tasks').insert([dbTask]);
       if (error) console.error('Supabase error:', error);
     }
   },
@@ -50,7 +60,14 @@ const useTaskStore = create((set, get) => ({
     lsSet(LS_KEYS.TASKS, updatedTasks);
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('tasks').update(updates).eq('id', id);
+      const dbUpdates = {};
+      if (updates.title !== undefined) dbUpdates.title = updates.title;
+      if (updates.description !== undefined) dbUpdates.description = updates.description || null;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
+      if (updates.deadline !== undefined) dbUpdates.deadline = (updates.deadline !== '' && updates.deadline != null) ? updates.deadline : null;
+      if (updates.category !== undefined) dbUpdates.category = updates.category || null;
+      const { error } = await supabase.from('tasks').update(dbUpdates).eq('id', id);
       if (error) console.error('Supabase error:', error);
     }
   },
