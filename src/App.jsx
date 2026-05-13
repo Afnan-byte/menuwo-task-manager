@@ -21,6 +21,7 @@ import useNoteStore from './store/noteStore';
 import useOrderStore from './store/orderStore';
 import useSettingsStore from './store/settingsStore';
 import { lsGet, LS_KEYS } from './lib/localStorage';
+import { isSupabaseConfigured } from './lib/supabase';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -124,6 +125,15 @@ function AppLayout() {
     };
 
     initData();
+
+    // Diagnostic logging
+    console.log('--- Menuwo OS Diagnostics ---');
+    console.log('Supabase Configured:', isSupabaseConfigured);
+    if (!isSupabaseConfigured) {
+      console.warn('Supabase is NOT configured. App is running in Local Only mode.');
+    } else {
+      console.log('Supabase Connection: Active');
+    }
   }, []);
 
   // Keyboard shortcut: Ctrl+K for quick search
