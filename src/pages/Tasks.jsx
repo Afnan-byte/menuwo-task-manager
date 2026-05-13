@@ -13,7 +13,7 @@ import { getPriorityColor, formatDate, isOverdue } from '../lib/utils';
 const COLUMNS = [
   { id: 'todo', label: 'To Do', color: '#6366f1' },
   { id: 'in-progress', label: 'In Progress', color: '#f59e0b' },
-  { id: 'done', label: 'Done', color: '#39D300' },
+  { id: 'done', label: 'Done', color: '#196F01' },
 ];
 
 const CATEGORIES = ['Marketing', 'Sales', 'Operations', 'Tech', 'Admin', 'Design', 'Finance'];
@@ -207,7 +207,7 @@ export default function Tasks() {
             <div className="h-2 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
               <motion.div
                 className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg, #39D300, #45FF00)', boxShadow: '0 0 8px rgba(57,211,0,0.5)' }}
+                style={{ background: 'linear-gradient(90deg, #196F01, #1e8501)', boxShadow: '0 0 8px rgba(25,111,1,0.5)' }}
                 initial={{ width: 0 }}
                 animate={{ width: `${(tasks.filter(t => t.status === 'done').length / tasks.length) * 100}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}

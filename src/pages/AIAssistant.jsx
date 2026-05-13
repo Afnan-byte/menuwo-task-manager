@@ -9,7 +9,7 @@ import { isOverdue, formatCurrency } from '../lib/utils';
 
 function InsightCard({ icon: Icon, title, message, action, color = 'accent', index }) {
   const colorMap = {
-    accent: { bg: 'rgba(57,211,0,0.08)', border: 'rgba(57,211,0,0.2)', icon: '#39D300' },
+    accent: { bg: 'rgba(25,111,1,0.08)', border: 'rgba(25,111,1,0.2)', icon: '#196F01' },
     amber: { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', icon: '#f59e0b' },
     red: { bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', icon: '#ef4444' },
     blue: { bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.2)', icon: '#6366f1' },

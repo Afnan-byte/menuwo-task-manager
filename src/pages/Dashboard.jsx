@@ -62,7 +62,7 @@ function DailyFocus({ tasks }) {
       <div className="flex items-center gap-2 mb-4">
         <Target className="text-accent" size={16} />
         <h3 className="text-sm font-semibold text-white">Daily Focus</h3>
-        <span className="ml-auto badge" style={{ background: 'rgba(57,211,0,0.1)', color: '#39D300' }}>
+        <span className="ml-auto badge" style={{ background: 'rgba(25,111,1,0.1)', color: '#196F01' }}>
           Today
         </span>
       </div>

@@ -5,7 +5,7 @@ import PageWrapper from '../components/layout/PageWrapper';
 import { lsGetObj, lsSet } from '../lib/localStorage';
 
 const ACCENT_PRESETS = [
-  { label: 'Neon Green', value: '#39D300' },
+  { label: 'Forest Green', value: '#196F01' },
   { label: 'Electric Blue', value: '#0ea5e9' },
   { label: 'Purple', value: '#a855f7' },
   { label: 'Orange', value: '#f97316' },
@@ -49,7 +49,7 @@ export default function Settings() {
             </div>
             <div className="flex items-center gap-4 mb-5">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-black"
-                style={{ background: 'linear-gradient(135deg, #39D300, #45FF00)', boxShadow: '0 0 20px rgba(57,211,0,0.3)' }}>
+                style={{ background: 'linear-gradient(135deg, #196F01, #1e8501)', boxShadow: '0 0 20px rgba(25,111,1,0.3)' }}>
                 {profile.name?.[0] || 'A'}
               </div>
               <div>
@@ -101,7 +101,7 @@ export default function Settings() {
               ))}
             </div>
             <p className="text-[10px] text-text-muted mt-3">
-              ✨ Full theme engine coming in v2 — currently Neon Green (#39D300) is the active theme.
+              ✨ Full theme engine coming in v2 — currently Forest Green (#196F01) is the active theme.
             </p>
           </div>
 

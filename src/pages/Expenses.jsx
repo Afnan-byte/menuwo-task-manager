@@ -10,7 +10,7 @@ import useExpenseStore from '../store/expenseStore';
 import { formatCurrency, formatDate } from '../lib/utils';
 
 const EXPENSE_CATEGORIES = ['Marketing', 'Travel', 'Printing', 'Software', 'Food', 'Other'];
-const PIE_COLORS = ['#39D300', '#6366f1', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899'];
+const PIE_COLORS = ['#196F01', '#6366f1', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899'];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -152,7 +152,7 @@ export default function Expenses() {
                   <XAxis dataKey="month" tick={{ fill: '#666', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#666', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                  <Bar dataKey="revenue" fill="#39D300" radius={[4, 4, 0, 0]} name="Revenue" />
+                  <Bar dataKey="revenue" fill="#196F01" radius={[4, 4, 0, 0]} name="Revenue" />
                   <Bar dataKey="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} name="Expenses" />
                 </BarChart>
               </ResponsiveContainer>

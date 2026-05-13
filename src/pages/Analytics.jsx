@@ -9,7 +9,7 @@ import useLeadStore from '../store/leadStore';
 import useExpenseStore from '../store/expenseStore';
 import { formatCurrency } from '../lib/utils';
 
-const FUNNEL_COLORS = ['#6366f1', '#3b82f6', '#f59e0b', '#ef4444', '#39D300'];
+const FUNNEL_COLORS = ['#6366f1', '#3b82f6', '#f59e0b', '#ef4444', '#196F01'];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -25,7 +25,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-function KPICard({ label, value, sub, color = '#39D300', index }) {
+function KPICard({ label, value, sub, color = '#196F01', index }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -103,8 +103,8 @@ export default function Analytics() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <KPICard label="Task Completion" value={`${completionRate}%`} sub={`${taskStats.completed} of ${taskStats.total} tasks`} index={0} />
           <KPICard label="Lead Conversion" value={`${conversionRate}%`} sub={`${leads.filter(l=>l.status==='closed').length} of ${leads.length} leads`} color="#6366f1" index={1} />
-          <KPICard label="Net Profit" value={formatCurrency(summary.profit)} sub="All time" color={summary.profit >= 0 ? '#39D300' : '#ef4444'} index={2} />
-          <KPICard label="Revenue Growth" value={`${growthRate > 0 ? '+' : ''}${growthRate}%`} sub="vs last month" color={growthRate >= 0 ? '#39D300' : '#ef4444'} index={3} />
+          <KPICard label="Net Profit" value={formatCurrency(summary.profit)} sub="All time" color={summary.profit >= 0 ? '#196F01' : '#ef4444'} index={2} />
+          <KPICard label="Revenue Growth" value={`${growthRate > 0 ? '+' : ''}${growthRate}%`} sub="vs last month" color={growthRate >= 0 ? '#196F01' : '#ef4444'} index={3} />
         </div>
 
         {/* Charts row 1 */}
@@ -119,8 +119,8 @@ export default function Analytics() {
                 <AreaChart data={monthly}>
                   <defs>
                     <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#39D300" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#39D300" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#196F01" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#196F01" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
@@ -130,7 +130,7 @@ export default function Analytics() {
                   <XAxis dataKey="month" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="revenue" stroke="#39D300" fill="url(#revenueGrad)" strokeWidth={2} name="Revenue" />
+                  <Area type="monotone" dataKey="revenue" stroke="#196F01" fill="url(#revenueGrad)" strokeWidth={2} name="Revenue" />
                   <Area type="monotone" dataKey="expenses" stroke="#ef4444" fill="url(#expenseGrad)" strokeWidth={2} name="Expenses" />
                 </AreaChart>
               </ResponsiveContainer>
