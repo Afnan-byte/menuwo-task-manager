@@ -54,13 +54,43 @@ function AppLayout() {
   const fetchSettings = useSettingsStore((s) => s.fetchSettings);
 
   useEffect(() => {
-    fetchTasks();
-    fetchLeads();
-    fetchEntries();
-    fetchItems();
-    fetchNotes();
-    fetchOrders();
-    fetchSettings();
+    const initData = async () => {
+      // Fetch all data
+      await Promise.all([
+        fetchTasks(),
+        fetchLeads(),
+        fetchEntries(),
+        fetchItems(),
+        fetchNotes(),
+        fetchOrders(),
+        fetchSettings()
+      ]);
+
+      // Simple Migration: If Supabase is configured but empty, and we have local data, upload it.
+      // Note: This is a basic implementation. For production, more robust conflict resolution is needed.
+      const stores = [
+        { name: 'tasks', data: useTaskStore.getState().tasks, add: useTaskStore.getState().addTask },
+        { name: 'leads', data: useLeadStore.getState().leads, add: useLeadStore.getState().addLead },
+        { name: 'expenses', data: useExpenseStore.getState().entries, add: useExpenseStore.getState().addEntry },
+        { name: 'content', data: useContentStore.getState().items, add: useContentStore.getState().addItem },
+        { name: 'notes', data: useNoteStore.getState().notes, add: useNoteStore.getState().addNote },
+        { name: 'orders', data: useOrderStore.getState().orders, add: useOrderStore.getState().addOrder },
+      ];
+
+      for (const store of stores) {
+        // If local storage has data but we fetched nothing from Supabase, upload local data
+        // We check if data exists in LS but not in the state after fetch
+        const lsData = JSON.parse(localStorage.getItem(`menuwo_${store.name}`) || '[]');
+        if (lsData.length > 0 && store.data.length === 0) {
+          console.log(`Migrating ${store.name} to Supabase...`);
+          for (const item of lsData) {
+            await store.add(item);
+          }
+        }
+      }
+    };
+
+    initData();
   }, []);
 
   // Keyboard shortcut: Ctrl+K for quick search
