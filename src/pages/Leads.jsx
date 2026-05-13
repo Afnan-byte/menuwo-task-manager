@@ -205,7 +205,6 @@ export default function Leads() {
 
         {/* Pipeline view */}
         {activeTab === 'pipeline' ? (
-          <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div className="flex gap-4 mobile-scroll-x pb-4 px-1">
             {PIPELINE.map((stage) => {
               const stageLeads = filtered.filter((l) => l.status === stage.id);
@@ -234,7 +233,6 @@ export default function Leads() {
               );
             })}
             </div>
-          </DndContext>
         ) : (
           <div className="glass-card overflow-x-auto">
             <table className="w-full text-sm">
