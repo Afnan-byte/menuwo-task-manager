@@ -50,18 +50,15 @@
 @layer components {
   /* Glass card */
   .glass-card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: #0f1115;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     transition: all 0.25s ease;
   }
 
   .glass-card:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    border-color: rgba(57, 211, 0, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
   }
 
   .glass-card-accent {
@@ -99,7 +96,7 @@
 
   /* Input */
   .input-glass {
-    background: rgba(255, 255, 255, 0.05);
+    background: #16191f;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     color: #fff;
