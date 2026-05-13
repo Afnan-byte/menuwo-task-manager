@@ -25,8 +25,8 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center justify-center py-6 border-b border-white/5">
-        <img src="/logo.png" alt="Menuwo Logo" className="w-10 h-10 object-contain" />
+      <div className="flex items-center justify-center py-8 border-b border-white/5">
+        <img src="/logo.png" alt="Menuwo Logo" className="w-32 h-auto object-contain" />
       </div>
 
       {/* Nav */}
