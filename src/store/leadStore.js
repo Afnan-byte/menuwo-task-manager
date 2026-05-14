@@ -19,6 +19,12 @@ const useLeadStore = create((set, get) => ({
         }));
         set({ leads: mappedData });
         lsSet(LS_KEYS.LEADS, mappedData);
+
+        // Reconcile existing closed leads with revenue tracker
+        const closedLeads = mappedData.filter(l => l.status === 'closed');
+        for (const lead of closedLeads) {
+          handleLeadRevenueSync(lead.id, lead);
+        }
       }
     } catch (e) {
       console.error('Supabase fetch error:', e);
