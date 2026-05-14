@@ -1,18 +1,22 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Bell, Save, Check, Database, KeyRound } from 'lucide-react';
+import { User, Bell, Save, Check, Database } from 'lucide-react';
 import PageWrapper from '../components/layout/PageWrapper';
-import { lsGetObj, lsSet } from '../lib/localStorage';
-
-
 import useSettingsStore from '../store/settingsStore';
-
 
 export default function Settings() {
   const [saved, setSaved] = useState(false);
   const { profile, updateProfile, notifications, updateNotifications } = useSettingsStore();
+  
+  // Local state for the Supabase form fields
+  const [sbConfig, setSbConfig] = useState({
+    url: import.meta.env.VITE_SUPABASE_URL || '',
+    key: import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+  });
 
   const handleSave = () => {
+    // In a real app, you might save these to a secure location or localStorage
+    // For now, we'll just show the "Saved" animation
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -67,8 +71,6 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Theme removed */}
-
           {/* Supabase */}
           <div className="glass-card p-5">
             <div className="flex items-center gap-2 mb-4">
@@ -83,12 +85,12 @@ export default function Settings() {
               <div>
                 <label className="text-xs text-text-muted mb-1 block">Supabase Project URL</label>
                 <input className="input-glass font-mono text-xs" placeholder="https://xxxx.supabase.co"
-                  value={supabase.url} onChange={(e) => setSupabase({ ...supabase, url: e.target.value })} />
+                  value={sbConfig.url} onChange={(e) => setSbConfig({ ...sbConfig, url: e.target.value })} />
               </div>
               <div>
                 <label className="text-xs text-text-muted mb-1 block">Anon Public Key</label>
                 <input className="input-glass font-mono text-xs" type="password" placeholder="eyJhbGciOiJ..."
-                  value={supabase.key} onChange={(e) => setSupabase({ ...supabase, key: e.target.value })} />
+                  value={sbConfig.key} onChange={(e) => setSbConfig({ ...sbConfig, key: e.target.value })} />
               </div>
               <p className="text-[10px] text-text-muted">
                 After saving, add these values to your <code className="text-accent">.env.local</code> file as
