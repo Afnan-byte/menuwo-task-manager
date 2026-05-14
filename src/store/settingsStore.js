@@ -1,9 +1,15 @@
 import { create } from 'zustand';
-import { lsGetObj, lsSet, LS_KEYS } from '../lib/localStorage';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { lsGetObj, lsSet } from '../lib/localStorage';
+import { db, isFirebaseConfigured } from '../lib/firebase';
+import { 
+  doc, 
+  getDoc,
+  setDoc,
+  updateDoc
+} from 'firebase/firestore';
 
-const PROFILE_ID = '00000000-0000-0000-0000-000000000001';
-const NOTIF_ID = '00000000-0000-0000-0000-000000000002';
+const PROFILE_ID = 'profile_001';
+const NOTIF_ID = 'notif_001';
 
 const useSettingsStore = create((set, get) => ({
   profile: lsGetObj('menuwo_profile', {
@@ -15,73 +21,71 @@ const useSettingsStore = create((set, get) => ({
   loading: false,
 
   fetchSettings: async () => {
-    if (!isSupabaseConfigured) return;
+    if (!isFirebaseConfigured) return;
     set({ loading: true });
     
-    // Fetch profile
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', PROFILE_ID)
-      .limit(1);
-    
-    if (!profileError && profileData && profileData.length > 0) {
-      set({ profile: profileData[0] });
-      lsSet('menuwo_profile', profileData[0]);
-    }
+    try {
+      // Fetch profile
+      const profileDoc = await getDoc(doc(db, 'profiles', PROFILE_ID));
+      if (profileDoc.exists()) {
+        const data = profileDoc.data();
+        set({ profile: data });
+        lsSet('menuwo_profile', data);
+      }
 
-    // Fetch notifications
-    const { data: notifData, error: notifError } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('id', NOTIF_ID)
-      .limit(1);
-    
-    if (!notifError && notifData && notifData.length > 0) {
-      const mappedNotifs = {
-        ...notifData[0],
-        overdueTasks: notifData[0].overdue_tasks,
-        leadFollowups: notifData[0].lead_followups,
-        dailyBriefing: notifData[0].daily_briefing,
-      };
-      set({ notifications: mappedNotifs });
-      lsSet('menuwo_notif', mappedNotifs);
+      // Fetch notifications
+      const notifDoc = await getDoc(doc(db, 'notifications', NOTIF_ID));
+      if (notifDoc.exists()) {
+        const data = notifDoc.data();
+        const mappedNotifs = {
+          ...data,
+          overdueTasks: data.overdue_tasks,
+          leadFollowups: data.lead_followups,
+          dailyBriefing: data.daily_briefing,
+        };
+        set({ notifications: mappedNotifs });
+        lsSet('menuwo_notif', mappedNotifs);
+      }
+    } catch (e) {
+      console.error('Firebase settings fetch error:', e);
     }
 
     set({ loading: false });
   },
 
   updateProfile: async (updates) => {
-    const newProfile = { ...get().profile, ...updates, id: PROFILE_ID };
+    const newProfile = { ...get().profile, ...updates };
     set({ profile: newProfile });
     lsSet('menuwo_profile', newProfile);
 
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.from('profiles').upsert([newProfile]);
-      if (error) console.error('Supabase error:', error);
+    if (isFirebaseConfigured) {
+      try {
+        await setDoc(doc(db, 'profiles', PROFILE_ID), newProfile, { merge: true });
+      } catch (e) {
+        console.error('Firebase profile update error:', e);
+      }
     }
   },
 
   updateNotifications: async (updates) => {
-    const newNotifs = { ...get().notifications, ...updates, id: NOTIF_ID };
+    const newNotifs = { ...get().notifications, ...updates };
     set({ notifications: newNotifs });
     lsSet('menuwo_notif', newNotifs);
 
-    if (isSupabaseConfigured) {
-      // Map camelCase to snake_case for Supabase
+    if (isFirebaseConfigured) {
+      // Map camelCase to snake_case for consistency with DB schema if desired, 
+      // though Firestore is flexible with camelCase.
       const dbNotifs = {
-        ...newNotifs,
         overdue_tasks: newNotifs.overdueTasks,
         lead_followups: newNotifs.leadFollowups,
         daily_briefing: newNotifs.dailyBriefing,
-        id: NOTIF_ID
       };
-      delete dbNotifs.overdueTasks;
-      delete dbNotifs.leadFollowups;
-      delete dbNotifs.dailyBriefing;
 
-      const { error } = await supabase.from('notifications').upsert([dbNotifs]);
-      if (error) console.error('Supabase error:', error);
+      try {
+        await setDoc(doc(db, 'notifications', NOTIF_ID), dbNotifs, { merge: true });
+      } catch (e) {
+        console.error('Firebase notif update error:', e);
+      }
     }
   },
 }));

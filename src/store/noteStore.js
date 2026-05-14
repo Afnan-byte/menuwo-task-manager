@@ -1,47 +1,69 @@
 import { create } from 'zustand';
 import { lsGet, lsSet, LS_KEYS } from '../lib/localStorage';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { db, isFirebaseConfigured } from '../lib/firebase';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  onSnapshot, 
+  query, 
+  orderBy,
+  getDocs
+} from 'firebase/firestore';
 
 const useNoteStore = create((set, get) => ({
   notes: lsGet(LS_KEYS.NOTES),
   loading: false,
 
   fetchNotes: async () => {
-    if (!isSupabaseConfigured) return;
+    if (!isFirebaseConfigured) return;
     set({ loading: true });
-    const { data, error } = await supabase.from('notes').select('*').order('created_at', { ascending: false });
-    if (!error && data) {
+    try {
+      const q = query(collection(db, 'notes'), orderBy('created_at', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
       set({ notes: data });
       lsSet(LS_KEYS.NOTES, data);
+    } catch (e) {
+      console.error('Firebase fetch error:', e);
     }
     set({ loading: false });
   },
 
   subscribeToChanges: () => {
-    if (!isSupabaseConfigured) return;
-    const channel = supabase
-      .channel('notes-realtime')
-      .on('postgres_changes', { event: '*', table: 'notes' }, () => {
-        get().fetchNotes();
-      })
-      .subscribe();
-    return () => supabase.removeChannel(channel);
+    if (!isFirebaseConfigured) return;
+    const q = query(collection(db, 'notes'), orderBy('created_at', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
+      set({ notes: data });
+      lsSet(LS_KEYS.NOTES, data);
+    });
+    return unsubscribe;
   },
 
   addNote: async (note) => {
     const newNote = { 
       ...note, 
-      id: note.id || crypto.randomUUID(), 
       created_at: new Date().toISOString(),
       pinned: false
     };
-    const updatedNotes = [newNote, ...get().notes];
+    
+    // Optimistic update
+    const optimisticId = crypto.randomUUID();
+    const updatedNotes = [{ ...newNote, id: optimisticId }, ...get().notes];
     set({ notes: updatedNotes });
     lsSet(LS_KEYS.NOTES, updatedNotes);
 
-    if (isSupabaseConfigured) {
+    if (isFirebaseConfigured) {
       const dbNote = {
-        id: newNote.id,
         created_at: newNote.created_at,
         title: newNote.title,
         content: newNote.content || null,
@@ -49,8 +71,11 @@ const useNoteStore = create((set, get) => ({
         pinned: newNote.pinned || false,
         color: newNote.color || null,
       };
-      const { error } = await supabase.from('notes').insert([dbNote]);
-      if (error) console.error('Supabase error:', error);
+      try {
+        await addDoc(collection(db, 'notes'), dbNote);
+      } catch (e) {
+        console.error('Firebase add error:', e);
+      }
     }
   },
 
@@ -59,15 +84,19 @@ const useNoteStore = create((set, get) => ({
     set({ notes: updatedNotes });
     lsSet(LS_KEYS.NOTES, updatedNotes);
 
-    if (isSupabaseConfigured) {
+    if (isFirebaseConfigured) {
       const dbUpdates = {};
       if (updates.title !== undefined) dbUpdates.title = updates.title;
       if (updates.content !== undefined) dbUpdates.content = updates.content || null;
       if (updates.category !== undefined) dbUpdates.category = updates.category || null;
       if (updates.pinned !== undefined) dbUpdates.pinned = updates.pinned;
       if (updates.color !== undefined) dbUpdates.color = updates.color || null;
-      const { error } = await supabase.from('notes').update(dbUpdates).eq('id', id);
-      if (error) console.error('Supabase error:', error);
+      
+      try {
+        await updateDoc(doc(db, 'notes', id), dbUpdates);
+      } catch (e) {
+        console.error('Firebase update error:', e);
+      }
     }
   },
 
@@ -76,9 +105,12 @@ const useNoteStore = create((set, get) => ({
     set({ notes: updatedNotes });
     lsSet(LS_KEYS.NOTES, updatedNotes);
 
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.from('notes').delete().eq('id', id);
-      if (error) console.error('Supabase error:', error);
+    if (isFirebaseConfigured) {
+      try {
+        await deleteDoc(doc(db, 'notes', id));
+      } catch (e) {
+        console.error('Firebase delete error:', e);
+      }
     }
   },
 
@@ -91,9 +123,12 @@ const useNoteStore = create((set, get) => ({
     set({ notes: updatedNotes });
     lsSet(LS_KEYS.NOTES, updatedNotes);
 
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.from('notes').update({ pinned: newPinned }).eq('id', id);
-      if (error) console.error('Supabase error:', error);
+    if (isFirebaseConfigured) {
+      try {
+        await updateDoc(doc(db, 'notes', id), { pinned: newPinned });
+      } catch (e) {
+        console.error('Firebase pin error:', e);
+      }
     }
   },
 

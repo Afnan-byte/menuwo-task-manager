@@ -8,15 +8,17 @@ export default function Settings() {
   const [saved, setSaved] = useState(false);
   const { profile, updateProfile, notifications, updateNotifications } = useSettingsStore();
   
-  // Local state for the Supabase form fields
-  const [sbConfig, setSbConfig] = useState({
-    url: import.meta.env.VITE_SUPABASE_URL || '',
-    key: import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+  // Local state for the Firebase form fields
+  const [fbConfig, setFbConfig] = useState({
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
   });
 
   const handleSave = () => {
-    // In a real app, you might save these to a secure location or localStorage
-    // For now, we'll just show the "Saved" animation
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -71,32 +73,41 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Supabase */}
+          {/* Firebase */}
           <div className="glass-card p-5">
             <div className="flex items-center gap-2 mb-4">
               <Database className="text-accent" size={16} />
-              <h3 className="text-sm font-semibold text-white">Supabase Configuration</h3>
+              <h3 className="text-sm font-semibold text-white">Firebase Configuration</h3>
               <span className="badge text-[10px] text-amber-400 bg-amber-400/10">Optional</span>
             </div>
             <p className="text-xs text-text-muted mb-3">
-              Connect your Supabase project for real-time cloud sync. Without this, data is stored locally.
+              Connect your Firebase project for real-time cloud sync. Without this, data is stored locally.
             </p>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-text-muted mb-1 block">Supabase Project URL</label>
-                <input className="input-glass font-mono text-xs" placeholder="https://xxxx.supabase.co"
-                  value={sbConfig.url} onChange={(e) => setSbConfig({ ...sbConfig, url: e.target.value })} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <label className="text-xs text-text-muted mb-1 block">API Key</label>
+                <input className="input-glass font-mono text-xs" type="password" placeholder="AIzaSy..."
+                  value={fbConfig.apiKey} onChange={(e) => setFbConfig({ ...fbConfig, apiKey: e.target.value })} />
               </div>
               <div>
-                <label className="text-xs text-text-muted mb-1 block">Anon Public Key</label>
-                <input className="input-glass font-mono text-xs" type="password" placeholder="eyJhbGciOiJ..."
-                  value={sbConfig.key} onChange={(e) => setSbConfig({ ...sbConfig, key: e.target.value })} />
+                <label className="text-xs text-text-muted mb-1 block">Project ID</label>
+                <input className="input-glass font-mono text-xs" placeholder="my-project-123"
+                  value={fbConfig.projectId} onChange={(e) => setFbConfig({ ...fbConfig, projectId: e.target.value })} />
               </div>
-              <p className="text-[10px] text-text-muted">
-                After saving, add these values to your <code className="text-accent">.env.local</code> file as
-                VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then restart the dev server.
-              </p>
+              <div>
+                <label className="text-xs text-text-muted mb-1 block">Auth Domain</label>
+                <input className="input-glass font-mono text-xs" placeholder="my-project.firebaseapp.com"
+                  value={fbConfig.authDomain} onChange={(e) => setFbConfig({ ...fbConfig, authDomain: e.target.value })} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="text-xs text-text-muted mb-1 block">App ID</label>
+                <input className="input-glass font-mono text-xs" placeholder="1:123456789:web:abcdef..."
+                  value={fbConfig.appId} onChange={(e) => setFbConfig({ ...fbConfig, appId: e.target.value })} />
+              </div>
             </div>
+            <p className="text-[10px] text-text-muted mt-3">
+              Add these values to your <code className="text-accent">.env.local</code> file as VITE_FIREBASE_* variables.
+            </p>
           </div>
 
           {/* Notifications */}

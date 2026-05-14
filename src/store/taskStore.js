@@ -1,54 +1,70 @@
 import { create } from 'zustand';
 import { lsGet, lsSet, LS_KEYS } from '../lib/localStorage';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { db, isFirebaseConfigured } from '../lib/firebase';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  onSnapshot, 
+  query, 
+  orderBy,
+  getDocs
+} from 'firebase/firestore';
 
 const useTaskStore = create((set, get) => ({
   tasks: lsGet(LS_KEYS.TASKS),
   loading: false,
 
   fetchTasks: async () => {
-    if (!isSupabaseConfigured) return;
+    if (!isFirebaseConfigured) return;
     set({ loading: true });
     try {
-      const { data, error } = await supabase.from('tasks').select('*').order('created_at', { ascending: false });
-      if (!error && data) {
-        const mappedData = data.map(t => ({
-          ...t,
-          dealValue: t.deal_value || 0,
-        }));
-        set({ tasks: mappedData });
-        lsSet(LS_KEYS.TASKS, mappedData);
-      }
+      const q = query(collection(db, 'tasks'), orderBy('created_at', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        dealValue: doc.data().deal_value || 0,
+      }));
+      set({ tasks: data });
+      lsSet(LS_KEYS.TASKS, data);
     } catch (e) {
-      console.error('Supabase fetch error:', e);
+      console.error('Firebase fetch error:', e);
     }
     set({ loading: false });
   },
 
   subscribeToChanges: () => {
-    if (!isSupabaseConfigured) return;
-    const channel = supabase
-      .channel('tasks-realtime')
-      .on('postgres_changes', { event: '*', table: 'tasks' }, () => {
-        get().fetchTasks();
-      })
-      .subscribe();
-    return () => supabase.removeChannel(channel);
+    if (!isFirebaseConfigured) return;
+    const q = query(collection(db, 'tasks'), orderBy('created_at', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        dealValue: doc.data().deal_value || 0,
+      }));
+      set({ tasks: data });
+      lsSet(LS_KEYS.TASKS, data);
+    });
+    return unsubscribe;
   },
 
   addTask: async (task) => {
     const newTask = {
       ...task,
-      id: task.id || crypto.randomUUID(),
       created_at: new Date().toISOString()
     };
-    const updatedTasks = [newTask, ...get().tasks];
+    
+    // Optimistic update for local
+    const optimisticId = crypto.randomUUID();
+    const updatedTasks = [{ ...newTask, id: optimisticId }, ...get().tasks];
     set({ tasks: updatedTasks });
     lsSet(LS_KEYS.TASKS, updatedTasks);
 
-    if (isSupabaseConfigured) {
+    if (isFirebaseConfigured) {
       const dbTask = {
-        id: newTask.id,
         created_at: newTask.created_at,
         title: newTask.title,
         description: newTask.description || null,
@@ -58,8 +74,11 @@ const useTaskStore = create((set, get) => ({
         category: newTask.category || null,
         deal_value: (newTask.dealValue !== '' && newTask.dealValue != null) ? parseFloat(newTask.dealValue) : 0,
       };
-      const { error } = await supabase.from('tasks').insert([dbTask]);
-      if (error) console.error('Supabase error:', error);
+      try {
+        await addDoc(collection(db, 'tasks'), dbTask);
+      } catch (e) {
+        console.error('Firebase add error:', e);
+      }
     }
   },
 
@@ -68,7 +87,7 @@ const useTaskStore = create((set, get) => ({
     set({ tasks: updatedTasks });
     lsSet(LS_KEYS.TASKS, updatedTasks);
 
-    if (isSupabaseConfigured) {
+    if (isFirebaseConfigured) {
       const dbUpdates = {};
       if (updates.title !== undefined) dbUpdates.title = updates.title;
       if (updates.description !== undefined) dbUpdates.description = updates.description || null;
@@ -77,8 +96,13 @@ const useTaskStore = create((set, get) => ({
       if (updates.deadline !== undefined) dbUpdates.deadline = (updates.deadline !== '' && updates.deadline != null) ? updates.deadline : null;
       if (updates.category !== undefined) dbUpdates.category = updates.category || null;
       if (updates.dealValue !== undefined) dbUpdates.deal_value = (updates.dealValue !== '' && updates.dealValue != null) ? parseFloat(updates.dealValue) : 0;
-      const { error } = await supabase.from('tasks').update(dbUpdates).eq('id', id);
-      if (error) console.error('Supabase error:', error);
+      
+      try {
+        const taskRef = doc(db, 'tasks', id);
+        await updateDoc(taskRef, dbUpdates);
+      } catch (e) {
+        console.error('Firebase update error:', e);
+      }
     }
   },
 
@@ -87,9 +111,12 @@ const useTaskStore = create((set, get) => ({
     set({ tasks: updatedTasks });
     lsSet(LS_KEYS.TASKS, updatedTasks);
 
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.from('tasks').delete().eq('id', id);
-      if (error) console.error('Supabase error:', error);
+    if (isFirebaseConfigured) {
+      try {
+        await deleteDoc(doc(db, 'tasks', id));
+      } catch (e) {
+        console.error('Firebase delete error:', e);
+      }
     }
   },
 
@@ -98,9 +125,12 @@ const useTaskStore = create((set, get) => ({
     set({ tasks: updatedTasks });
     lsSet(LS_KEYS.TASKS, updatedTasks);
 
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', id);
-      if (error) console.error('Supabase error:', error);
+    if (isFirebaseConfigured) {
+      try {
+        await updateDoc(doc(db, 'tasks', id), { status: newStatus });
+      } catch (e) {
+        console.error('Firebase move error:', e);
+      }
     }
   },
 }));

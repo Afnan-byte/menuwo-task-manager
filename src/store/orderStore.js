@@ -1,50 +1,70 @@
 import { create } from 'zustand';
 import { lsGet, lsSet, LS_KEYS } from '../lib/localStorage';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { db, isFirebaseConfigured } from '../lib/firebase';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  onSnapshot, 
+  query, 
+  orderBy,
+  getDocs
+} from 'firebase/firestore';
 
 const useOrderStore = create((set, get) => ({
   orders: lsGet(LS_KEYS.ORDERS),
   loading: false,
 
   fetchOrders: async () => {
-    if (!isSupabaseConfigured) return;
+    if (!isFirebaseConfigured) return;
     set({ loading: true });
-    const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-    if (!error && data) {
-      const mappedData = data.map(o => ({
-        ...o,
-        standType: o.stand_type,
+    try {
+      const q = query(collection(db, 'orders'), orderBy('created_at', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        standType: doc.data().stand_type,
       }));
-      set({ orders: mappedData });
-      lsSet(LS_KEYS.ORDERS, mappedData);
+      set({ orders: data });
+      lsSet(LS_KEYS.ORDERS, data);
+    } catch (e) {
+      console.error('Firebase fetch error:', e);
     }
     set({ loading: false });
   },
 
   subscribeToChanges: () => {
-    if (!isSupabaseConfigured) return;
-    const channel = supabase
-      .channel('orders-realtime')
-      .on('postgres_changes', { event: '*', table: 'orders' }, () => {
-        get().fetchOrders();
-      })
-      .subscribe();
-    return () => supabase.removeChannel(channel);
+    if (!isFirebaseConfigured) return;
+    const q = query(collection(db, 'orders'), orderBy('created_at', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        standType: doc.data().stand_type,
+      }));
+      set({ orders: data });
+      lsSet(LS_KEYS.ORDERS, data);
+    });
+    return unsubscribe;
   },
 
   addOrder: async (order) => {
     const newOrder = { 
       ...order, 
-      id: order.id || crypto.randomUUID(), 
       created_at: new Date().toISOString() 
     };
-    const updatedOrders = [newOrder, ...get().orders];
+    
+    // Optimistic update
+    const optimisticId = crypto.randomUUID();
+    const updatedOrders = [{ ...newOrder, id: optimisticId }, ...get().orders];
     set({ orders: updatedOrders });
     lsSet(LS_KEYS.ORDERS, updatedOrders);
 
-    if (isSupabaseConfigured) {
+    if (isFirebaseConfigured) {
       const dbOrder = {
-        id: newOrder.id,
         created_at: newOrder.created_at,
         client: newOrder.client,
         stand_type: newOrder.standType || newOrder.stand_type || null,
@@ -53,8 +73,11 @@ const useOrderStore = create((set, get) => ({
         delivery: (newOrder.delivery !== '' && newOrder.delivery != null) ? newOrder.delivery : null,
         notes: newOrder.notes || null,
       };
-      const { error } = await supabase.from('orders').insert([dbOrder]);
-      if (error) console.error('Supabase error:', error);
+      try {
+        await addDoc(collection(db, 'orders'), dbOrder);
+      } catch (e) {
+        console.error('Firebase add error:', e);
+      }
     }
   },
 
@@ -63,7 +86,7 @@ const useOrderStore = create((set, get) => ({
     set({ orders: updatedOrders });
     lsSet(LS_KEYS.ORDERS, updatedOrders);
 
-    if (isSupabaseConfigured) {
+    if (isFirebaseConfigured) {
       const dbUpdates = {};
       if (updates.client !== undefined) dbUpdates.client = updates.client;
       if (updates.standType !== undefined) dbUpdates.stand_type = updates.standType;
@@ -72,8 +95,12 @@ const useOrderStore = create((set, get) => ({
       if (updates.status !== undefined) dbUpdates.status = updates.status;
       if (updates.delivery !== undefined) dbUpdates.delivery = (updates.delivery !== '' && updates.delivery != null) ? updates.delivery : null;
       if (updates.notes !== undefined) dbUpdates.notes = updates.notes || null;
-      const { error } = await supabase.from('orders').update(dbUpdates).eq('id', id);
-      if (error) console.error('Supabase error:', error);
+      
+      try {
+        await updateDoc(doc(db, 'orders', id), dbUpdates);
+      } catch (e) {
+        console.error('Firebase update error:', e);
+      }
     }
   },
 
@@ -82,9 +109,12 @@ const useOrderStore = create((set, get) => ({
     set({ orders: updatedOrders });
     lsSet(LS_KEYS.ORDERS, updatedOrders);
 
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.from('orders').delete().eq('id', id);
-      if (error) console.error('Supabase error:', error);
+    if (isFirebaseConfigured) {
+      try {
+        await deleteDoc(doc(db, 'orders', id));
+      } catch (e) {
+        console.error('Firebase delete error:', e);
+      }
     }
   },
 

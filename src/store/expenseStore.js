@@ -1,46 +1,68 @@
 import { create } from 'zustand';
 import { lsGet, lsSet, LS_KEYS } from '../lib/localStorage';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { db, isFirebaseConfigured } from '../lib/firebase';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  onSnapshot, 
+  query, 
+  orderBy,
+  getDocs
+} from 'firebase/firestore';
 
 const useExpenseStore = create((set, get) => ({
   entries: lsGet(LS_KEYS.EXPENSES),
   loading: false,
 
   fetchEntries: async () => {
-    if (!isSupabaseConfigured) return;
+    if (!isFirebaseConfigured) return;
     set({ loading: true });
-    const { data, error } = await supabase.from('expenses').select('*').order('created_at', { ascending: false });
-    if (!error && data) {
+    try {
+      const q = query(collection(db, 'expenses'), orderBy('created_at', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
       set({ entries: data });
       lsSet(LS_KEYS.EXPENSES, data);
+    } catch (e) {
+      console.error('Firebase fetch error:', e);
     }
     set({ loading: false });
   },
 
   subscribeToChanges: () => {
-    if (!isSupabaseConfigured) return;
-    const channel = supabase
-      .channel('expenses-realtime')
-      .on('postgres_changes', { event: '*', table: 'expenses' }, () => {
-        get().fetchEntries();
-      })
-      .subscribe();
-    return () => supabase.removeChannel(channel);
+    if (!isFirebaseConfigured) return;
+    const q = query(collection(db, 'expenses'), orderBy('created_at', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
+      set({ entries: data });
+      lsSet(LS_KEYS.EXPENSES, data);
+    });
+    return unsubscribe;
   },
 
   addEntry: async (entry) => {
     const newEntry = { 
       ...entry, 
-      id: entry.id || crypto.randomUUID(), 
       created_at: new Date().toISOString() 
     };
-    const updatedEntries = [newEntry, ...get().entries];
+    
+    // Optimistic update
+    const optimisticId = crypto.randomUUID();
+    const updatedEntries = [{ ...newEntry, id: optimisticId }, ...get().entries];
     set({ entries: updatedEntries });
     lsSet(LS_KEYS.EXPENSES, updatedEntries);
 
-    if (isSupabaseConfigured) {
+    if (isFirebaseConfigured) {
       const dbEntry = {
-        id: newEntry.id,
         created_at: newEntry.created_at,
         type: newEntry.type,
         amount: parseFloat(newEntry.amount) || 0,
@@ -48,8 +70,11 @@ const useExpenseStore = create((set, get) => ({
         date: (newEntry.date !== '' && newEntry.date != null) ? newEntry.date : null,
         notes: newEntry.notes || null,
       };
-      const { error } = await supabase.from('expenses').insert([dbEntry]);
-      if (error) console.error('Supabase error:', error);
+      try {
+        await addDoc(collection(db, 'expenses'), dbEntry);
+      } catch (e) {
+        console.error('Firebase add error:', e);
+      }
     }
   },
 
@@ -58,15 +83,19 @@ const useExpenseStore = create((set, get) => ({
     set({ entries: updatedEntries });
     lsSet(LS_KEYS.EXPENSES, updatedEntries);
 
-    if (isSupabaseConfigured) {
+    if (isFirebaseConfigured) {
       const dbUpdates = {};
       if (updates.type !== undefined) dbUpdates.type = updates.type;
       if (updates.amount !== undefined) dbUpdates.amount = parseFloat(updates.amount) || 0;
       if (updates.category !== undefined) dbUpdates.category = updates.category || null;
       if (updates.date !== undefined) dbUpdates.date = (updates.date !== '' && updates.date != null) ? updates.date : null;
       if (updates.notes !== undefined) dbUpdates.notes = updates.notes || null;
-      const { error } = await supabase.from('expenses').update(dbUpdates).eq('id', id);
-      if (error) console.error('Supabase error:', error);
+      
+      try {
+        await updateDoc(doc(db, 'expenses', id), dbUpdates);
+      } catch (e) {
+        console.error('Firebase update error:', e);
+      }
     }
   },
 
@@ -75,9 +104,12 @@ const useExpenseStore = create((set, get) => ({
     set({ entries: updatedEntries });
     lsSet(LS_KEYS.EXPENSES, updatedEntries);
 
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.from('expenses').delete().eq('id', id);
-      if (error) console.error('Supabase error:', error);
+    if (isFirebaseConfigured) {
+      try {
+        await deleteDoc(doc(db, 'expenses', id));
+      } catch (e) {
+        console.error('Firebase delete error:', e);
+      }
     }
   },
 

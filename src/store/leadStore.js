@@ -1,32 +1,43 @@
 import { create } from 'zustand';
 import { lsGet, lsSet, LS_KEYS } from '../lib/localStorage';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { db, isFirebaseConfigured } from '../lib/firebase';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  onSnapshot, 
+  query, 
+  orderBy,
+  getDocs,
+  setDoc
+} from 'firebase/firestore';
 
 const useLeadStore = create((set, get) => ({
   leads: lsGet(LS_KEYS.LEADS),
   loading: false,
 
   fetchLeads: async () => {
-    if (!isSupabaseConfigured) return;
+    if (!isFirebaseConfigured) return;
     set({ loading: true });
     try {
-      const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
-      if (!error && data) {
-        const mappedData = data.map(l => ({
-          ...l,
-          dealValue: l.deal_value,
-          followUp: l.follow_up,
-        }));
-        set({ leads: mappedData });
-        lsSet(LS_KEYS.LEADS, mappedData);
-      }
+      const q = query(collection(db, 'leads'), orderBy('created_at', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        dealValue: doc.data().deal_value,
+        followUp: doc.data().follow_up,
+      }));
+      set({ leads: data });
+      lsSet(LS_KEYS.LEADS, data);
     } catch (e) {
-      console.error('Supabase fetch error:', e);
+      console.error('Firebase fetch error:', e);
     }
     set({ loading: false });
   },
 
-  // Manual trigger for reconciliation to avoid infinite loops during normal operation
   reconcileLeads: async () => {
     const closedLeads = get().leads.filter(l => l.status === 'closed');
     if (closedLeads.length === 0) return;
@@ -34,21 +45,25 @@ const useLeadStore = create((set, get) => ({
     const { default: useExpenseStore } = await import('./expenseStore');
     const expenseStore = useExpenseStore.getState();
     
-    // Batch process to avoid multiple renders
     for (const lead of closedLeads) {
       await handleLeadRevenueSync(lead.id, lead, expenseStore);
     }
   },
 
   subscribeToChanges: () => {
-    if (!isSupabaseConfigured) return;
-    const channel = supabase
-      .channel('leads-realtime')
-      .on('postgres_changes', { event: '*', table: 'leads' }, () => {
-        get().fetchLeads();
-      })
-      .subscribe();
-    return () => supabase.removeChannel(channel);
+    if (!isFirebaseConfigured) return;
+    const q = query(collection(db, 'leads'), orderBy('created_at', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        dealValue: doc.data().deal_value,
+        followUp: doc.data().follow_up,
+      }));
+      set({ leads: data });
+      lsSet(LS_KEYS.LEADS, data);
+    });
+    return unsubscribe;
   },
 
   addLead: async (lead) => {
@@ -61,11 +76,10 @@ const useLeadStore = create((set, get) => ({
     set({ leads: updatedLeads });
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
-    if (isSupabaseConfigured) {
+    if (isFirebaseConfigured) {
       const dv = newLead.dealValue;
       const fu = newLead.followUp;
       const dbLead = {
-        id: newLead.id,
         created_at: newLead.created_at,
         restaurant: newLead.restaurant,
         contact: newLead.contact || null,
@@ -77,12 +91,18 @@ const useLeadStore = create((set, get) => ({
         notes: newLead.notes || null,
       };
 
-      const { error } = await supabase.from('leads').insert([dbLead]);
-      if (error) console.error('Supabase error:', dbLead, error);
+      try {
+        const docRef = await addDoc(collection(db, 'leads'), dbLead);
+        // Sync with revenue using the REAL ID from Firestore
+        const { default: useExpenseStore } = await import('./expenseStore');
+        await handleLeadRevenueSync(docRef.id, { ...newLead, id: docRef.id }, useExpenseStore.getState());
+      } catch (e) {
+        console.error('Firebase add error:', e);
+      }
+    } else {
+      const { default: useExpenseStore } = await import('./expenseStore');
+      await handleLeadRevenueSync(newLead.id, newLead, useExpenseStore.getState());
     }
-
-    const { default: useExpenseStore } = await import('./expenseStore');
-    await handleLeadRevenueSync(newLead.id, newLead, useExpenseStore.getState());
   },
 
   updateLead: async (id, updates) => {
@@ -91,7 +111,7 @@ const useLeadStore = create((set, get) => ({
     set({ leads: updatedLeads });
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
-    if (isSupabaseConfigured) {
+    if (isFirebaseConfigured) {
       const dbUpdates = {};
       if (updates.restaurant !== undefined) dbUpdates.restaurant = updates.restaurant;
       if (updates.contact !== undefined) dbUpdates.contact = updates.contact || null;
@@ -106,8 +126,11 @@ const useLeadStore = create((set, get) => ({
         dbUpdates.follow_up = (updates.followUp !== '' && updates.followUp != null) ? updates.followUp : null;
       }
 
-      const { error } = await supabase.from('leads').update(dbUpdates).eq('id', id);
-      if (error) console.error('Supabase error:', error);
+      try {
+        await updateDoc(doc(db, 'leads', id), dbUpdates);
+      } catch (e) {
+        console.error('Firebase update error:', e);
+      }
     }
 
     const { default: useExpenseStore } = await import('./expenseStore');
@@ -122,9 +145,12 @@ const useLeadStore = create((set, get) => ({
     const { default: useExpenseStore } = await import('./expenseStore');
     await handleLeadRevenueSync(id, { status: 'deleted' }, useExpenseStore.getState());
 
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.from('leads').delete().eq('id', id);
-      if (error) console.error('Supabase error:', error);
+    if (isFirebaseConfigured) {
+      try {
+        await deleteDoc(doc(db, 'leads', id));
+      } catch (e) {
+        console.error('Firebase delete error:', e);
+      }
     }
   },
 
@@ -134,9 +160,12 @@ const useLeadStore = create((set, get) => ({
     set({ leads: updatedLeads });
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.from('leads').update({ status: newStatus }).eq('id', id);
-      if (error) console.error('Supabase error:', error);
+    if (isFirebaseConfigured) {
+      try {
+        await updateDoc(doc(db, 'leads', id), { status: newStatus });
+      } catch (e) {
+        console.error('Firebase move error:', e);
+      }
     }
 
     const { default: useExpenseStore } = await import('./expenseStore');
@@ -144,7 +173,6 @@ const useLeadStore = create((set, get) => ({
   },
 }));
 
-// Helper to handle lead revenue synchronization
 async function handleLeadRevenueSync(leadId, lead, expenseStore) {
   try {
     const currentEntries = expenseStore.entries;

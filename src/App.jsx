@@ -20,7 +20,7 @@ import useContentStore from './store/contentStore';
 import useNoteStore from './store/noteStore';
 import useOrderStore from './store/orderStore';
 import useSettingsStore from './store/settingsStore';
-import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { isFirebaseConfigured, db } from './lib/firebase';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -62,8 +62,10 @@ function AppLayout() {
   const subOrders = useOrderStore((s) => s.subscribeToChanges);
 
   useEffect(() => {
+    let unsubs = [];
+
     const initData = async () => {
-      // 1. Fetch all data from Supabase
+      // 1. Fetch all data from Firebase
       try {
         await Promise.all([
           fetchTasks(),
@@ -83,21 +85,14 @@ function AppLayout() {
 
       // 3. Setup real-time subscriptions
       try {
-        const unsubTasks = subTasks();
-        const unsubLeads = subLeads();
-        const unsubExpenses = subExpenses();
-        const unsubContent = subContent();
-        const unsubNotes = subNotes();
-        const unsubOrders = subOrders();
-
-        return () => {
-          unsubTasks?.();
-          unsubLeads?.();
-          unsubExpenses?.();
-          unsubContent?.();
-          unsubNotes?.();
-          unsubOrders?.();
-        };
+        unsubs = [
+          subTasks(),
+          subLeads(),
+          subExpenses(),
+          subContent(),
+          subNotes(),
+          subOrders()
+        ].filter(fn => typeof fn === 'function');
       } catch (e) {
         console.error('Subscription error:', e);
       }
@@ -107,8 +102,12 @@ function AppLayout() {
 
     // Diagnostic logging
     console.log('--- Menuwo OS Diagnostics ---');
-    console.log('Supabase Configured:', isSupabaseConfigured);
-    console.log('Supabase Instance:', !!supabase);
+    console.log('Firebase Configured:', isFirebaseConfigured);
+    console.log('Firestore Instance:', !!db);
+
+    return () => {
+      unsubs.forEach(unsub => unsub?.());
+    };
   }, []);
 
   // Keyboard shortcut: Ctrl+K for quick search

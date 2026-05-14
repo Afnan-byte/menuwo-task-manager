@@ -1,46 +1,68 @@
 import { create } from 'zustand';
 import { lsGet, lsSet, LS_KEYS } from '../lib/localStorage';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { db, isFirebaseConfigured } from '../lib/firebase';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  onSnapshot, 
+  query, 
+  orderBy,
+  getDocs
+} from 'firebase/firestore';
 
 const useContentStore = create((set, get) => ({
   items: lsGet(LS_KEYS.CONTENT),
   loading: false,
 
   fetchItems: async () => {
-    if (!isSupabaseConfigured) return;
+    if (!isFirebaseConfigured) return;
     set({ loading: true });
-    const { data, error } = await supabase.from('content').select('*').order('created_at', { ascending: false });
-    if (!error && data) {
+    try {
+      const q = query(collection(db, 'content'), orderBy('created_at', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
       set({ items: data });
       lsSet(LS_KEYS.CONTENT, data);
+    } catch (e) {
+      console.error('Firebase fetch error:', e);
     }
     set({ loading: false });
   },
 
   subscribeToChanges: () => {
-    if (!isSupabaseConfigured) return;
-    const channel = supabase
-      .channel('content-realtime')
-      .on('postgres_changes', { event: '*', table: 'content' }, () => {
-        get().fetchItems();
-      })
-      .subscribe();
-    return () => supabase.removeChannel(channel);
+    if (!isFirebaseConfigured) return;
+    const q = query(collection(db, 'content'), orderBy('created_at', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
+      set({ items: data });
+      lsSet(LS_KEYS.CONTENT, data);
+    });
+    return unsubscribe;
   },
 
   addItem: async (item) => {
     const newItem = { 
       ...item, 
-      id: item.id || crypto.randomUUID(), 
       created_at: new Date().toISOString() 
     };
-    const updatedItems = [newItem, ...get().items];
+    
+    // Optimistic update
+    const optimisticId = crypto.randomUUID();
+    const updatedItems = [{ ...newItem, id: optimisticId }, ...get().items];
     set({ items: updatedItems });
     lsSet(LS_KEYS.CONTENT, updatedItems);
 
-    if (isSupabaseConfigured) {
+    if (isFirebaseConfigured) {
       const dbItem = {
-        id: newItem.id,
         created_at: newItem.created_at,
         title: newItem.title,
         type: newItem.type || null,
@@ -48,8 +70,11 @@ const useContentStore = create((set, get) => ({
         date: (newItem.date !== '' && newItem.date != null) ? newItem.date : null,
         notes: newItem.notes || null,
       };
-      const { error } = await supabase.from('content').insert([dbItem]);
-      if (error) console.error('Supabase error:', error);
+      try {
+        await addDoc(collection(db, 'content'), dbItem);
+      } catch (e) {
+        console.error('Firebase add error:', e);
+      }
     }
   },
 
@@ -58,15 +83,19 @@ const useContentStore = create((set, get) => ({
     set({ items: updatedItems });
     lsSet(LS_KEYS.CONTENT, updatedItems);
 
-    if (isSupabaseConfigured) {
+    if (isFirebaseConfigured) {
       const dbUpdates = {};
       if (updates.title !== undefined) dbUpdates.title = updates.title;
       if (updates.type !== undefined) dbUpdates.type = updates.type || null;
       if (updates.status !== undefined) dbUpdates.status = updates.status;
       if (updates.date !== undefined) dbUpdates.date = (updates.date !== '' && updates.date != null) ? updates.date : null;
       if (updates.notes !== undefined) dbUpdates.notes = updates.notes || null;
-      const { error } = await supabase.from('content').update(dbUpdates).eq('id', id);
-      if (error) console.error('Supabase error:', error);
+      
+      try {
+        await updateDoc(doc(db, 'content', id), dbUpdates);
+      } catch (e) {
+        console.error('Firebase update error:', e);
+      }
     }
   },
 
@@ -75,9 +104,12 @@ const useContentStore = create((set, get) => ({
     set({ items: updatedItems });
     lsSet(LS_KEYS.CONTENT, updatedItems);
 
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.from('content').delete().eq('id', id);
-      if (error) console.error('Supabase error:', error);
+    if (isFirebaseConfigured) {
+      try {
+        await deleteDoc(doc(db, 'content', id));
+      } catch (e) {
+        console.error('Firebase delete error:', e);
+      }
     }
   },
 
