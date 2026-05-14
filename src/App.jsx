@@ -20,7 +20,7 @@ import useContentStore from './store/contentStore';
 import useNoteStore from './store/noteStore';
 import useOrderStore from './store/orderStore';
 import useSettingsStore from './store/settingsStore';
-import { isSupabaseConfigured } from './lib/supabase';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -82,21 +82,25 @@ function AppLayout() {
       }
 
       // 3. Setup real-time subscriptions
-      const unsubTasks = subTasks();
-      const unsubLeads = subLeads();
-      const unsubExpenses = subExpenses();
-      const unsubContent = subContent();
-      const unsubNotes = subNotes();
-      const unsubOrders = subOrders();
+      try {
+        const unsubTasks = subTasks();
+        const unsubLeads = subLeads();
+        const unsubExpenses = subExpenses();
+        const unsubContent = subContent();
+        const unsubNotes = subNotes();
+        const unsubOrders = subOrders();
 
-      return () => {
-        unsubTasks?.();
-        unsubLeads?.();
-        unsubExpenses?.();
-        unsubContent?.();
-        unsubNotes?.();
-        unsubOrders?.();
-      };
+        return () => {
+          unsubTasks?.();
+          unsubLeads?.();
+          unsubExpenses?.();
+          unsubContent?.();
+          unsubNotes?.();
+          unsubOrders?.();
+        };
+      } catch (e) {
+        console.error('Subscription error:', e);
+      }
     };
 
     initData();
@@ -104,6 +108,7 @@ function AppLayout() {
     // Diagnostic logging
     console.log('--- Menuwo OS Diagnostics ---');
     console.log('Supabase Configured:', isSupabaseConfigured);
+    console.log('Supabase Instance:', !!supabase);
   }, []);
 
   // Keyboard shortcut: Ctrl+K for quick search

@@ -5,13 +5,11 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Flag: if Supabase is not configured, app falls back to localStorage
 export const isSupabaseConfigured =
-  supabaseUrl &&
+  !!(supabaseUrl &&
   supabaseAnonKey &&
   supabaseUrl !== 'your_supabase_project_url' &&
-  !supabaseUrl.includes('placeholder');
+  !supabaseUrl.includes('placeholder'));
 
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
-
-export default supabase;
