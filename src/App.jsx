@@ -20,7 +20,6 @@ import useContentStore from './store/contentStore';
 import useNoteStore from './store/noteStore';
 import useOrderStore from './store/orderStore';
 import useSettingsStore from './store/settingsStore';
-import { lsGet, LS_KEYS } from './lib/localStorage';
 import { isSupabaseConfigured } from './lib/supabase';
 
 function AnimatedRoutes() {
@@ -64,51 +63,25 @@ function AppLayout() {
 
   useEffect(() => {
     const initData = async () => {
-      // 1. Capture local data BEFORE fetching from Supabase
-      const localBackups = {
-        tasks: lsGet(LS_KEYS.TASKS),
-        leads: lsGet(LS_KEYS.LEADS),
-        expenses: lsGet(LS_KEYS.EXPENSES),
-        content: lsGet(LS_KEYS.CONTENT),
-        notes: lsGet(LS_KEYS.NOTES),
-        orders: lsGet(LS_KEYS.ORDERS),
-      };
+      // 1. Fetch all data from Supabase
+      try {
+        await Promise.all([
+          fetchTasks(),
+          fetchLeads(),
+          fetchEntries(),
+          fetchItems(),
+          fetchNotes(),
+          fetchOrders(),
+          fetchSettings()
+        ]);
 
-      await Promise.all([
-        fetchTasks(),
-        fetchLeads(),
-        fetchEntries(),
-        fetchItems(),
-        fetchNotes(),
-        fetchOrders(),
-        fetchSettings()
-      ]);
-
-      // Reconcile closed leads with revenue tracker ONCE on init
-      await useLeadStore.getState().reconcileLeads();
-
-      // 3. Migration: If Supabase is empty but local had data, upload it
-      const stores = [
-        { key: 'tasks', current: useTaskStore.getState().tasks, add: useTaskStore.getState().addTask },
-        { key: 'leads', current: useLeadStore.getState().leads, add: useLeadStore.getState().addLead },
-        { key: 'expenses', current: useExpenseStore.getState().entries, add: useExpenseStore.getState().addEntry },
-        { key: 'content', current: useContentStore.getState().items, add: useContentStore.getState().addItem },
-        { key: 'notes', current: useNoteStore.getState().notes, add: useNoteStore.getState().addNote },
-        { key: 'orders', current: useOrderStore.getState().orders, add: useOrderStore.getState().addOrder },
-      ];
-
-      for (const store of stores) {
-        const localData = localBackups[store.key];
-        // If Supabase returned nothing but we had local data, migrate it
-        if (localData.length > 0 && store.current.length === 0) {
-          console.log(`Migrating ${store.key} to Supabase...`);
-          for (const item of localData) {
-            await store.add(item);
-          }
-        }
+        // 2. Reconcile closed leads with revenue tracker ONCE on init
+        await useLeadStore.getState().reconcileLeads();
+      } catch (e) {
+        console.error('Initialization error:', e);
       }
 
-      // 4. Setup real-time subscriptions
+      // 3. Setup real-time subscriptions
       const unsubTasks = subTasks();
       const unsubLeads = subLeads();
       const unsubExpenses = subExpenses();
@@ -131,11 +104,6 @@ function AppLayout() {
     // Diagnostic logging
     console.log('--- Menuwo OS Diagnostics ---');
     console.log('Supabase Configured:', isSupabaseConfigured);
-    if (!isSupabaseConfigured) {
-      console.warn('Supabase is NOT configured. App is running in Local Only mode.');
-    } else {
-      console.log('Supabase Connection: Active');
-    }
   }, []);
 
   // Keyboard shortcut: Ctrl+K for quick search
@@ -143,7 +111,6 @@ function AppLayout() {
     const handleKey = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        // trigger search (topbar handles this internally)
       }
     };
     window.addEventListener('keydown', handleKey);

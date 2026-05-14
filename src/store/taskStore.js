@@ -29,7 +29,7 @@ const useTaskStore = create((set, get) => ({
     if (!isSupabaseConfigured) return;
     const channel = supabase
       .channel('tasks-realtime')
-      .on('postgres_changes', { event: '*', table: 'leads' }, () => { // Note: leadStore says 'leads' table? Wait, taskStore should be 'tasks' table.
+      .on('postgres_changes', { event: '*', table: 'tasks' }, () => {
         get().fetchTasks();
       })
       .subscribe();
