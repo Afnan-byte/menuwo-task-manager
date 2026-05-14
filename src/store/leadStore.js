@@ -19,17 +19,25 @@ const useLeadStore = create((set, get) => ({
         }));
         set({ leads: mappedData });
         lsSet(LS_KEYS.LEADS, mappedData);
-
-        // Reconcile existing closed leads with revenue tracker
-        const closedLeads = mappedData.filter(l => l.status === 'closed');
-        for (const lead of closedLeads) {
-          handleLeadRevenueSync(lead.id, lead);
-        }
       }
     } catch (e) {
       console.error('Supabase fetch error:', e);
     }
     set({ loading: false });
+  },
+
+  // Manual trigger for reconciliation to avoid infinite loops during normal operation
+  reconcileLeads: async () => {
+    const closedLeads = get().leads.filter(l => l.status === 'closed');
+    if (closedLeads.length === 0) return;
+
+    const { default: useExpenseStore } = await import('./expenseStore');
+    const expenseStore = useExpenseStore.getState();
+    
+    // Batch process to avoid multiple renders
+    for (const lead of closedLeads) {
+      await handleLeadRevenueSync(lead.id, lead, expenseStore);
+    }
   },
 
   subscribeToChanges: () => {
@@ -70,11 +78,11 @@ const useLeadStore = create((set, get) => ({
       };
 
       const { error } = await supabase.from('leads').insert([dbLead]);
-      if (error) console.error('Supabase error:', error);
+      if (error) console.error('Supabase error:', dbLead, error);
     }
 
-    // Sync revenue for the new lead
-    await handleLeadRevenueSync(newLead.id, newLead);
+    const { default: useExpenseStore } = await import('./expenseStore');
+    await handleLeadRevenueSync(newLead.id, newLead, useExpenseStore.getState());
   },
 
   updateLead: async (id, updates) => {
@@ -102,8 +110,8 @@ const useLeadStore = create((set, get) => ({
       if (error) console.error('Supabase error:', error);
     }
 
-    // Handle revenue sync
-    await handleLeadRevenueSync(id, { ...oldLead, ...updates });
+    const { default: useExpenseStore } = await import('./expenseStore');
+    await handleLeadRevenueSync(id, { ...oldLead, ...updates }, useExpenseStore.getState());
   },
 
   deleteLead: async (id) => {
@@ -111,8 +119,8 @@ const useLeadStore = create((set, get) => ({
     set({ leads: updatedLeads });
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
-    // Handle revenue sync (deletion)
-    await handleLeadRevenueSync(id, { status: 'deleted' });
+    const { default: useExpenseStore } = await import('./expenseStore');
+    await handleLeadRevenueSync(id, { status: 'deleted' }, useExpenseStore.getState());
 
     if (isSupabaseConfigured) {
       const { error } = await supabase.from('leads').delete().eq('id', id);
@@ -131,19 +139,15 @@ const useLeadStore = create((set, get) => ({
       if (error) console.error('Supabase error:', error);
     }
 
-    // Handle revenue sync
-    await handleLeadRevenueSync(id, { ...lead, status: newStatus });
+    const { default: useExpenseStore } = await import('./expenseStore');
+    await handleLeadRevenueSync(id, { ...lead, status: newStatus }, useExpenseStore.getState());
   },
 }));
 
 // Helper to handle lead revenue synchronization
-async function handleLeadRevenueSync(leadId, lead) {
+async function handleLeadRevenueSync(leadId, lead, expenseStore) {
   try {
-    const { default: useExpenseStore } = await import('./expenseStore');
-    const expenseStore = useExpenseStore.getState();
-    
-    // Always get fresh entries to avoid race conditions
-    const currentEntries = useExpenseStore.getState().entries;
+    const currentEntries = expenseStore.entries;
     const linkedEntries = currentEntries.filter(e => e.notes?.includes(`[LEAD_LINK:${leadId}]`));
 
     if (lead.status === 'closed' && (lead.dealValue !== undefined && lead.dealValue !== null && lead.dealValue !== '')) {
@@ -154,21 +158,19 @@ async function handleLeadRevenueSync(leadId, lead) {
       
       if (linkedEntries.length > 0) {
         const [primary, ...others] = linkedEntries;
+        const currentAmount = parseFloat(primary.amount);
         
-        // Update primary if amount or restaurant name changed
-        if (Math.abs(parseFloat(primary.amount) - dealVal) > 0.01 || !primary.notes.includes(lead.restaurant)) {
+        if (Math.abs(currentAmount - dealVal) > 0.01 || !primary.notes.includes(lead.restaurant)) {
           await expenseStore.updateEntry(primary.id, {
             amount: dealVal,
             notes: expectedNotes
           });
         }
         
-        // Clean up any duplicates
         for (const duplicate of others) {
           await expenseStore.deleteEntry(duplicate.id);
         }
       } else {
-        // Create new entry
         await expenseStore.addEntry({
           type: 'revenue',
           amount: dealVal,
@@ -178,7 +180,6 @@ async function handleLeadRevenueSync(leadId, lead) {
         });
       }
     } else {
-      // Remove all linked entries if no longer closed
       for (const entry of linkedEntries) {
         await expenseStore.deleteEntry(entry.id);
       }

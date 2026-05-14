@@ -74,7 +74,6 @@ function AppLayout() {
         orders: lsGet(LS_KEYS.ORDERS),
       };
 
-      // 2. Fetch all data from Supabase
       await Promise.all([
         fetchTasks(),
         fetchLeads(),
@@ -84,6 +83,9 @@ function AppLayout() {
         fetchOrders(),
         fetchSettings()
       ]);
+
+      // Reconcile closed leads with revenue tracker ONCE on init
+      await useLeadStore.getState().reconcileLeads();
 
       // 3. Migration: If Supabase is empty but local had data, upload it
       const stores = [
