@@ -14,7 +14,8 @@ export const LS_KEYS = {
 export function lsGet(key) {
   try {
     const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : [];
+    const parsed = data ? JSON.parse(data) : [];
+    return parsed || [];
   } catch {
     return [];
   }
@@ -31,7 +32,8 @@ export function lsSet(key, value) {
 export function lsGetObj(key, defaultVal = {}) {
   try {
     const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : defaultVal;
+    const parsed = data ? JSON.parse(data) : defaultVal;
+    return parsed || defaultVal;
   } catch {
     return defaultVal;
   }
