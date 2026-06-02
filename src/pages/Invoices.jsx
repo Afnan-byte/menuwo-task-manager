@@ -225,7 +225,7 @@ export default function Invoices() {
                       <td className="px-6 py-4 font-medium text-white">{inv.invoiceNumber}</td>
                       <td className="px-6 py-4 text-text-muted">{inv.clientName || 'Unnamed Client'}</td>
                       <td className="px-6 py-4 text-text-muted">{inv.date}</td>
-                      <td className="px-6 py-4 text-white font-medium">${parseFloat(inv.total || 0).toFixed(2)}</td>
+                      <td className="px-6 py-4 text-white font-medium">₹{parseFloat(inv.total || 0).toFixed(2)}</td>
                       <td className="px-6 py-4 text-right">
                         <button
                           onClick={(e) => {
@@ -256,7 +256,7 @@ export default function Invoices() {
                       <p className="font-semibold text-white">{inv.invoiceNumber}</p>
                       <p className="text-xs text-text-muted mt-0.5">{inv.clientName || 'Unnamed Client'}</p>
                     </div>
-                    <p className="text-white font-bold">${parseFloat(inv.total || 0).toFixed(2)}</p>
+                    <p className="text-white font-bold">₹{parseFloat(inv.total || 0).toFixed(2)}</p>
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-text-muted">{inv.date}</span>

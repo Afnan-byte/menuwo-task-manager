@@ -58,8 +58,8 @@ const InvoiceTemplate = ({ invoice }) => {
               <tr key={index}>
                 <td className="py-4 text-gray-900">{item.description || 'Item description'}</td>
                 <td className="py-4 text-right text-gray-600">{item.quantity || 1}</td>
-                <td className="py-4 text-right text-gray-600">${parseFloat(item.rate || 0).toFixed(2)}</td>
-                <td className="py-4 text-right font-medium text-gray-900">${(parseFloat(item.quantity || 1) * parseFloat(item.rate || 0)).toFixed(2)}</td>
+                <td className="py-4 text-right text-gray-600">₹{parseFloat(item.rate || 0).toFixed(2)}</td>
+                <td className="py-4 text-right font-medium text-gray-900">₹{(parseFloat(item.quantity || 1) * parseFloat(item.rate || 0)).toFixed(2)}</td>
               </tr>
             ))
           ) : (
@@ -74,23 +74,23 @@ const InvoiceTemplate = ({ invoice }) => {
       <div className="w-full sm:w-2/3 md:w-1/2 ml-auto">
         <div className="flex justify-between py-2 text-gray-600">
           <span>Subtotal</span>
-          <span>${parseFloat(invoice.subtotal || 0).toFixed(2)}</span>
+          <span>₹{parseFloat(invoice.subtotal || 0).toFixed(2)}</span>
         </div>
         {parseFloat(invoice.discount || 0) > 0 && (
           <div className="flex justify-between py-2 text-gray-600">
             <span>Discount</span>
-            <span>-${parseFloat(invoice.discount || 0).toFixed(2)}</span>
+            <span>-₹{parseFloat(invoice.discount || 0).toFixed(2)}</span>
           </div>
         )}
         {parseFloat(invoice.taxRate || 0) > 0 && (
           <div className="flex justify-between py-2 text-gray-600">
             <span>Tax ({invoice.taxRate}%)</span>
-            <span>${((parseFloat(invoice.subtotal || 0) - parseFloat(invoice.discount || 0)) * (parseFloat(invoice.taxRate || 0) / 100)).toFixed(2)}</span>
+            <span>₹{((parseFloat(invoice.subtotal || 0) - parseFloat(invoice.discount || 0)) * (parseFloat(invoice.taxRate || 0) / 100)).toFixed(2)}</span>
           </div>
         )}
         <div className="flex justify-between py-4 border-t border-gray-200 mt-2">
           <span className="font-bold text-gray-900 text-lg uppercase tracking-wide">Total</span>
-          <span className="font-bold text-gray-900 text-lg">${parseFloat(invoice.total || 0).toFixed(2)}</span>
+          <span className="font-bold text-gray-900 text-lg">₹{parseFloat(invoice.total || 0).toFixed(2)}</span>
         </div>
       </div>
 

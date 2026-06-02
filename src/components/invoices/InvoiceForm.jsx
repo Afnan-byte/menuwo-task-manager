@@ -136,7 +136,7 @@ const InvoiceForm = ({ invoice, setInvoice }) => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-white/10 pt-4">
         <div>
-          <label className="block text-xs font-medium text-text-muted mb-1">Discount ($)</label>
+          <label className="block text-xs font-medium text-text-muted mb-1">Discount (₹)</label>
           <input
             type="number"
             value={invoice.discount || 0}
