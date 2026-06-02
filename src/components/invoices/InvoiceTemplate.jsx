@@ -8,7 +8,7 @@ const InvoiceTemplate = ({ invoice }) => {
       {/* Header */}
       <div className="flex justify-between items-start mb-12">
         <div className="flex items-center gap-4">
-          <img src="/logo.png" alt="Menuwo Logo" className="w-40 h-auto" />
+          <img src="/menuwo-logo.png" alt="Menuwo Logo" className="w-40 h-auto" />
         </div>
         <div className="text-right">
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight uppercase mb-2">Invoice</h1>
