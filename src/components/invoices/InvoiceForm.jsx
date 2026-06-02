@@ -71,7 +71,7 @@ const InvoiceForm = ({ invoice, setInvoice }) => {
               placeholder="client@example.com"
             />
           </div>
-          <div className="col-span-2">
+          <div className="col-span-1">
             <label className="block text-xs font-medium text-text-muted mb-1">Client Address</label>
             <textarea
               value={invoice.clientAddress || ''}
