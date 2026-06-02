@@ -20,7 +20,7 @@ const InvoiceTemplate = ({ invoice }) => {
         <div>
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">From</h3>
           <p className="font-bold text-gray-900 text-lg">Menuwo</p>
-          <p className="text-gray-600 mt-1">contact@menuwo.com</p>
+          <p className="text-gray-600 mt-1">info@menuwo.in</p>
           <p className="text-gray-600">www.menuwo.com</p>
         </div>
         <div className="text-right">
