@@ -25,8 +25,8 @@ const InvoiceForm = ({ invoice, setInvoice }) => {
   };
 
   return (
-    <div className="space-y-6 bg-white/5 border border-white/10 rounded-xl p-6">
-      <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-6 bg-white/5 border border-white/10 rounded-xl p-4 md:p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-text-muted mb-1">Invoice Number</label>
           <input
@@ -50,7 +50,7 @@ const InvoiceForm = ({ invoice, setInvoice }) => {
 
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-white border-b border-white/10 pb-2">Client Details</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-medium text-text-muted mb-1">Client Name</label>
             <input
@@ -134,7 +134,7 @@ const InvoiceForm = ({ invoice, setInvoice }) => {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-white/10 pt-4">
         <div>
           <label className="block text-xs font-medium text-text-muted mb-1">Discount ($)</label>
           <input

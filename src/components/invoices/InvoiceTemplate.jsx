@@ -4,30 +4,30 @@ const InvoiceTemplate = ({ invoice }) => {
   if (!invoice) return null;
 
   return (
-    <div className="bg-white text-black p-8 max-w-4xl mx-auto min-h-[1056px] print:p-0 print:min-h-0 relative shadow-sm" id="invoice-printable-area">
+    <div className="bg-white text-black p-4 md:p-8 max-w-4xl mx-auto min-h-0 md:min-h-[1056px] print:p-0 print:min-h-0 relative shadow-sm" id="invoice-printable-area">
       {/* Header */}
-      <div className="flex justify-between items-start mb-12">
+      <div className="flex justify-between items-start mb-6 md:mb-12">
         <div className="flex items-center gap-4">
-          <img src="/menuwo-logo.png" alt="Menuwo Logo" className="w-40 h-auto" />
+          <img src="/menuwo-logo.png" alt="Menuwo Logo" className="w-24 md:w-40 h-auto" />
         </div>
         <div className="text-right">
-          <h1 className="text-4xl font-bold text-gray-900 tracking-tight uppercase mb-2">Invoice</h1>
-          <p className="text-gray-500 font-medium">#{invoice.invoiceNumber || 'INV-000'}</p>
+          <h1 className="text-2xl md:text-4xl font-bold text-gray-900 tracking-tight uppercase mb-1 md:mb-2">Invoice</h1>
+          <p className="text-gray-500 font-medium text-sm">#{invoice.invoiceNumber || 'INV-000'}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-8 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-12">
         <div>
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">From</h3>
-          <p className="font-bold text-gray-900 text-lg">Menuwo</p>
-          <p className="text-gray-600 mt-1">info@menuwo.in</p>
-          <p className="text-gray-600">www.menuwo.com</p>
+          <h3 className="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider mb-2 md:mb-3">From</h3>
+          <p className="font-bold text-gray-900 text-base md:text-lg">Menuwo</p>
+          <p className="text-gray-600 mt-1 text-sm">info@menuwo.in</p>
+          <p className="text-gray-600 text-sm">www.menuwo.com</p>
         </div>
-        <div className="text-right">
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Bill To</h3>
-          <p className="font-bold text-gray-900 text-lg">{invoice.clientName || 'Client Name'}</p>
-          {invoice.clientEmail && <p className="text-gray-600 mt-1">{invoice.clientEmail}</p>}
-          {invoice.clientAddress && <p className="text-gray-600 whitespace-pre-wrap mt-1">{invoice.clientAddress}</p>}
+        <div className="sm:text-right">
+          <h3 className="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider mb-2 md:mb-3">Bill To</h3>
+          <p className="font-bold text-gray-900 text-base md:text-lg">{invoice.clientName || 'Client Name'}</p>
+          {invoice.clientEmail && <p className="text-gray-600 mt-1 text-sm">{invoice.clientEmail}</p>}
+          {invoice.clientAddress && <p className="text-gray-600 whitespace-pre-wrap mt-1 text-sm">{invoice.clientAddress}</p>}
         </div>
       </div>
 
@@ -71,7 +71,7 @@ const InvoiceTemplate = ({ invoice }) => {
       </table>
 
       {/* Totals */}
-      <div className="w-1/2 ml-auto">
+      <div className="w-full sm:w-2/3 md:w-1/2 ml-auto">
         <div className="flex justify-between py-2 text-gray-600">
           <span>Subtotal</span>
           <span>${parseFloat(invoice.subtotal || 0).toFixed(2)}</span>
