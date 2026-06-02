@@ -50,7 +50,7 @@ const InvoiceForm = ({ invoice, setInvoice }) => {
 
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-white border-b border-white/10 pb-2">Client Details</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <div>
             <label className="block text-xs font-medium text-text-muted mb-1">Client Name</label>
             <input
