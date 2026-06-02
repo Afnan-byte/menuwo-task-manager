@@ -4,7 +4,7 @@ import { isFirebaseConfigured } from '../../lib/firebase';
 import {
   LayoutDashboard, CheckSquare, Users, DollarSign,
   Calendar, FileText, Package, BarChart2, Sparkles,
-  Settings, ChevronLeft, ChevronRight, Zap, X
+  Settings, ChevronLeft, ChevronRight, Zap, X, Receipt
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { path: '/tasks', icon: CheckSquare, label: 'Tasks' },
   { path: '/leads', icon: Users, label: 'Leads & CRM' },
   { path: '/expenses', icon: DollarSign, label: 'Expenses' },
+  { path: '/invoices', icon: Receipt, label: 'Invoices' },
   { path: '/content', icon: Calendar, label: 'Content Planner' },
   { path: '/notes', icon: FileText, label: 'Notes & Ideas' },
   { path: '/orders', icon: Package, label: 'QR Orders' },

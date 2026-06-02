@@ -13,6 +13,7 @@ import Orders from './pages/Orders';
 import Analytics from './pages/Analytics';
 import AIAssistant from './pages/AIAssistant';
 import Settings from './pages/Settings';
+import Invoices from './pages/Invoices';
 import useTaskStore from './store/taskStore';
 import useLeadStore from './store/leadStore';
 import useExpenseStore from './store/expenseStore';
@@ -20,6 +21,7 @@ import useContentStore from './store/contentStore';
 import useNoteStore from './store/noteStore';
 import useOrderStore from './store/orderStore';
 import useSettingsStore from './store/settingsStore';
+import useInvoiceStore from './store/invoiceStore';
 import { isFirebaseConfigured, db } from './lib/firebase';
 
 function AnimatedRoutes() {
@@ -37,6 +39,7 @@ function AnimatedRoutes() {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/ai" element={<AIAssistant />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/invoices" element={<Invoices />} />
       </Routes>
     </AnimatePresence>
   );
@@ -53,6 +56,7 @@ function AppLayout() {
   const fetchNotes = useNoteStore((s) => s.fetchNotes);
   const fetchOrders = useOrderStore((s) => s.fetchOrders);
   const fetchSettings = useSettingsStore((s) => s.fetchSettings);
+  const fetchInvoices = useInvoiceStore((s) => s.fetchInvoices);
 
   const subTasks = useTaskStore((s) => s.subscribeToChanges);
   const subLeads = useLeadStore((s) => s.subscribeToChanges);
@@ -60,6 +64,7 @@ function AppLayout() {
   const subContent = useContentStore((s) => s.subscribeToChanges);
   const subNotes = useNoteStore((s) => s.subscribeToChanges);
   const subOrders = useOrderStore((s) => s.subscribeToChanges);
+  const subInvoices = useInvoiceStore((s) => s.subscribeToChanges);
 
   useEffect(() => {
     let unsubs = [];
@@ -74,7 +79,8 @@ function AppLayout() {
           fetchItems(),
           fetchNotes(),
           fetchOrders(),
-          fetchSettings()
+          fetchSettings(),
+          fetchInvoices()
         ]);
 
         // 2. Reconcile closed leads with revenue tracker ONCE on init
@@ -91,7 +97,8 @@ function AppLayout() {
           subExpenses(),
           subContent(),
           subNotes(),
-          subOrders()
+          subOrders(),
+          subInvoices()
         ].filter(fn => typeof fn === 'function');
       } catch (e) {
         console.error('Subscription error:', e);

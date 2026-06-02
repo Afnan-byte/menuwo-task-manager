@@ -8,6 +8,7 @@ export const LS_KEYS = {
   CONTENT: 'menuwo_content',
   PROFILE: 'menuwo_profile',
   ACTIVITY: 'menuwo_activity',
+  INVOICES: 'menuwo_invoices',
 };
 
 export function lsGet(key) {
