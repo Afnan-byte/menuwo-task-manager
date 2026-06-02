@@ -93,8 +93,8 @@ const InvoiceForm = ({ invoice, setInvoice }) => {
         </div>
         
         {(invoice.items || []).map((item, index) => (
-          <div key={index} className="flex gap-2 items-start">
-            <div className="flex-1">
+          <div key={index} className="flex flex-col sm:flex-row gap-2 sm:items-start bg-black/20 sm:bg-transparent p-3 sm:p-0 rounded-lg sm:rounded-none border border-white/5 sm:border-none">
+            <div className="w-full sm:flex-1">
               <input
                 type="text"
                 value={item.description}
@@ -103,33 +103,35 @@ const InvoiceForm = ({ invoice, setInvoice }) => {
                 placeholder="Item description"
               />
             </div>
-            <div className="w-20">
-              <input
-                type="number"
-                value={item.quantity}
-                onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value))}
-                className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accent"
-                placeholder="Qty"
-                min="1"
-              />
+            <div className="flex gap-2 w-full sm:w-auto items-center">
+              <div className="flex-1 sm:w-20">
+                <input
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value))}
+                  className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accent"
+                  placeholder="Qty"
+                  min="1"
+                />
+              </div>
+              <div className="flex-1 sm:w-24">
+                <input
+                  type="number"
+                  value={item.rate}
+                  onChange={(e) => handleItemChange(index, 'rate', parseFloat(e.target.value))}
+                  className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accent"
+                  placeholder="Rate"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <button
+                onClick={() => removeItem(index)}
+                className="p-2.5 text-text-muted hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors flex-shrink-0 sm:mt-0.5"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
-            <div className="w-24">
-              <input
-                type="number"
-                value={item.rate}
-                onChange={(e) => handleItemChange(index, 'rate', parseFloat(e.target.value))}
-                className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accent"
-                placeholder="Rate"
-                min="0"
-                step="0.01"
-              />
-            </div>
-            <button
-              onClick={() => removeItem(index)}
-              className="p-2.5 text-text-muted hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors mt-0.5"
-            >
-              <Trash2 size={16} />
-            </button>
           </div>
         ))}
       </div>
