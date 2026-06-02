@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Printer, Save, FileText, ChevronLeft, Trash2 } from 'lucide-react';
+import { Plus, Printer, Save, FileText, ChevronLeft, Trash2, Download } from 'lucide-react';
 import useInvoiceStore from '../store/invoiceStore';
 import InvoiceForm from '../components/invoices/InvoiceForm';
 import InvoiceTemplate from '../components/invoices/InvoiceTemplate';
+import html2pdf from 'html2pdf.js';
 
 export default function Invoices() {
   const { invoices, addInvoice, updateInvoice, deleteInvoice } = useInvoiceStore();
@@ -60,8 +61,21 @@ export default function Invoices() {
   };
 
   const handlePrint = () => {
-    // We could save it automatically before printing if needed, but for now just print.
     window.print();
+  };
+
+  const handleDownloadPDF = () => {
+    const element = document.getElementById('invoice-printable-area');
+    if (!element) return;
+    const filename = `${calculatedInvoice?.invoiceNumber || 'invoice'}.pdf`;
+    const opt = {
+      margin: 0.3,
+      filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
   };
 
   if (view === 'edit' && calculatedInvoice) {
@@ -87,9 +101,16 @@ export default function Invoices() {
                   <Save size={18} />
                 </button>
                 <button 
-                  onClick={handlePrint}
+                  onClick={handleDownloadPDF}
                   className="p-2 bg-accent hover:bg-accent-hover rounded-lg text-white transition-colors shadow-glow-sm"
-                  title="Print / Save PDF"
+                  title="Download PDF"
+                >
+                  <Download size={18} />
+                </button>
+                <button 
+                  onClick={handlePrint}
+                  className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors"
+                  title="Print"
                 >
                   <Printer size={18} />
                 </button>
