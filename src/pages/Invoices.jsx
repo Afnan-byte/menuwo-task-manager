@@ -11,7 +11,7 @@ export default function Invoices() {
   const [currentInvoice, setCurrentInvoice] = useState(null);
 
   const defaultInvoice = {
-    invoiceNumber: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
+    invoiceNumber: `INV-${String((invoices || []).length + 1).padStart(3, '0')}`,
     date: new Date().toISOString().split('T')[0],
     dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     clientName: '',
@@ -27,7 +27,7 @@ export default function Invoices() {
   // Calculate totals dynamically
   const calculatedInvoice = useMemo(() => {
     if (!currentInvoice) return null;
-    const subtotal = currentInvoice.items.reduce((sum, item) => sum + (parseFloat(item.quantity || 0) * parseFloat(item.rate || 0)), 0);
+    const subtotal = (currentInvoice.items || []).reduce((sum, item) => sum + (parseFloat(item.quantity || 0) * parseFloat(item.rate || 0)), 0);
     const discount = parseFloat(currentInvoice.discount || 0);
     const taxableAmount = subtotal - discount;
     const tax = taxableAmount * (parseFloat(currentInvoice.taxRate || 0) / 100);
@@ -133,7 +133,7 @@ export default function Invoices() {
       </div>
 
       <div className="bg-white/5 border border-white/10 rounded-2xl flex-1 overflow-hidden flex flex-col">
-        {invoices.length === 0 ? (
+        {(invoices || []).length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
             <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
               <FileText size={32} className="text-text-muted" />
@@ -162,7 +162,7 @@ export default function Invoices() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {invoices.map((inv) => (
+                {(invoices || []).map((inv) => (
                   <motion.tr 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

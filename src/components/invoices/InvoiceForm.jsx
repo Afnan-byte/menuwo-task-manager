@@ -92,7 +92,7 @@ const InvoiceForm = ({ invoice, setInvoice }) => {
           </button>
         </div>
         
-        {invoice.items.map((item, index) => (
+        {(invoice.items || []).map((item, index) => (
           <div key={index} className="flex gap-2 items-start">
             <div className="flex-1">
               <input
