@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Printer, Save, FileText, ChevronLeft } from 'lucide-react';
+import { Plus, Printer, Save, FileText, ChevronLeft, Trash2 } from 'lucide-react';
 import useInvoiceStore from '../store/invoiceStore';
 import InvoiceForm from '../components/invoices/InvoiceForm';
 import InvoiceTemplate from '../components/invoices/InvoiceTemplate';
