@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Sidebar from './components/layout/Sidebar';
@@ -128,6 +128,9 @@ function AppLayout() {
     return () => window.removeEventListener('keydown', handleKey);
   }, []);
 
+  const location = useLocation();
+  const hideTopbar = location.pathname === '/invoices';
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#060608' }}>
       <Sidebar
@@ -137,7 +140,7 @@ function AppLayout() {
         setMobileOpen={setMobileOpen}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Topbar onMenuClick={() => setMobileOpen(true)} />
+        {!hideTopbar && <Topbar onMenuClick={() => setMobileOpen(true)} />}
         <main className="flex-1 overflow-y-auto">
           <AnimatedRoutes />
         </main>
