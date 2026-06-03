@@ -102,10 +102,6 @@ const InvoiceTemplate = ({ invoice }) => {
         </div>
       )}
 
-      {/* Brand Footer */}
-      <div className="absolute bottom-8 left-8 right-8 text-center text-gray-400 text-sm border-t border-gray-100 pt-8 print:hidden">
-        Thank you for your business!
-      </div>
     </div>
   );
 };
