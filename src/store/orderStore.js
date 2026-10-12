@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { lsGet, lsSet, LS_KEYS } from '../lib/localStorage';
 import { db, isFirebaseConfigured } from '../lib/firebase';
+import { safeMergeItems } from '../lib/syncService';
 import { 
   collection, 
-  addDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc, 
   doc, 
@@ -18,55 +19,84 @@ const useOrderStore = create((set, get) => ({
   loading: false,
 
   fetchOrders: async () => {
-    if (!isFirebaseConfigured) return;
+    if (!isFirebaseConfigured || !db) return;
     set({ loading: true });
     try {
       const q = query(collection(db, 'orders'), orderBy('created_at', 'desc'));
       const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({
+      const remoteData = querySnapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id,
-        standType: doc.data().stand_type,
+        standType: doc.data().stand_type || doc.data().standType,
       }));
-      set({ orders: data });
-      lsSet(LS_KEYS.ORDERS, data);
+
+      // Safe merge to prevent deleting existing local data
+      const localOrders = get().orders || lsGet(LS_KEYS.ORDERS);
+      const { merged, toUpload } = safeMergeItems(localOrders, remoteData);
+      set({ orders: merged });
+      lsSet(LS_KEYS.ORDERS, merged);
+
+      // Upload unsynced local orders to cloud
+      if (toUpload.length > 0) {
+        for (const o of toUpload) {
+          try {
+            await setDoc(doc(db, 'orders', o.id), {
+              created_at: o.created_at || new Date().toISOString(),
+              client: o.client || '',
+              stand_type: o.standType || o.stand_type || null,
+              qty: parseInt(o.qty) || 1,
+              status: o.status || 'pending',
+              delivery: (o.delivery !== '' && o.delivery != null) ? o.delivery : null,
+              notes: o.notes || null,
+            }, { merge: true });
+          } catch (uploadErr) {
+            console.warn('[Orders] Cloud upload item failed:', uploadErr);
+          }
+        }
+      }
     } catch (e) {
-      console.error('Firebase fetch error:', e);
+      console.warn('Firebase fetch orders warning:', e.message);
+    } finally {
+      set({ loading: false });
     }
-    set({ loading: false });
   },
 
   subscribeToChanges: () => {
-    if (!isFirebaseConfigured) return;
+    if (!isFirebaseConfigured || !db) return;
     const q = query(collection(db, 'orders'), orderBy('created_at', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
+      const remoteData = snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id,
-        standType: doc.data().stand_type,
+        standType: doc.data().stand_type || doc.data().standType,
       }));
-      set({ orders: data });
-      lsSet(LS_KEYS.ORDERS, data);
+      const localOrders = get().orders || [];
+      const { merged } = safeMergeItems(localOrders, remoteData);
+      set({ orders: merged });
+      lsSet(LS_KEYS.ORDERS, merged);
+    }, (err) => {
+      console.warn('Firebase orders subscription warning:', err.message);
     });
     return unsubscribe;
   },
 
   addOrder: async (order) => {
+    const orderId = order.id || crypto.randomUUID();
     const newOrder = { 
       ...order, 
-      created_at: new Date().toISOString() 
+      id: orderId,
+      created_at: order.created_at || new Date().toISOString() 
     };
     
     // Optimistic update
-    const optimisticId = crypto.randomUUID();
-    const updatedOrders = [{ ...newOrder, id: optimisticId }, ...get().orders];
+    const updatedOrders = [newOrder, ...get().orders.filter(o => o.id !== orderId)];
     set({ orders: updatedOrders });
     lsSet(LS_KEYS.ORDERS, updatedOrders);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       const dbOrder = {
         created_at: newOrder.created_at,
-        client: newOrder.client,
+        client: newOrder.client || '',
         stand_type: newOrder.standType || newOrder.stand_type || null,
         qty: parseInt(newOrder.qty) || 1,
         status: newOrder.status || 'pending',
@@ -74,9 +104,9 @@ const useOrderStore = create((set, get) => ({
         notes: newOrder.notes || null,
       };
       try {
-        await addDoc(collection(db, 'orders'), dbOrder);
+        await setDoc(doc(db, 'orders', orderId), dbOrder, { merge: true });
       } catch (e) {
-        console.error('Firebase add error:', e);
+        console.warn('Firebase add order warning:', e.message);
       }
     }
   },
@@ -86,7 +116,7 @@ const useOrderStore = create((set, get) => ({
     set({ orders: updatedOrders });
     lsSet(LS_KEYS.ORDERS, updatedOrders);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       const dbUpdates = {};
       if (updates.client !== undefined) dbUpdates.client = updates.client;
       if (updates.standType !== undefined) dbUpdates.stand_type = updates.standType;
@@ -99,7 +129,7 @@ const useOrderStore = create((set, get) => ({
       try {
         await updateDoc(doc(db, 'orders', id), dbUpdates);
       } catch (e) {
-        console.error('Firebase update error:', e);
+        console.warn('Firebase update order warning:', e.message);
       }
     }
   },
@@ -109,11 +139,11 @@ const useOrderStore = create((set, get) => ({
     set({ orders: updatedOrders });
     lsSet(LS_KEYS.ORDERS, updatedOrders);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       try {
         await deleteDoc(doc(db, 'orders', id));
       } catch (e) {
-        console.error('Firebase delete error:', e);
+        console.warn('Firebase delete order warning:', e.message);
       }
     }
   },

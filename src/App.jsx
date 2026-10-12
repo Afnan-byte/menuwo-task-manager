@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Sidebar from './components/layout/Sidebar';
 import Topbar from './components/layout/Topbar';
+import CloudSyncBanner from './components/ui/CloudSyncBanner';
+import CloudSyncModal from './components/ui/CloudSyncModal';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Leads from './pages/Leads';
@@ -22,6 +24,8 @@ import useNoteStore from './store/noteStore';
 import useOrderStore from './store/orderStore';
 import useSettingsStore from './store/settingsStore';
 import useInvoiceStore from './store/invoiceStore';
+import useSyncStore from './store/syncStore';
+import { saveEmergencyBackup } from './lib/syncService';
 import { isFirebaseConfigured, db } from './lib/firebase';
 
 function AnimatedRoutes() {
@@ -66,11 +70,19 @@ function AppLayout() {
   const subOrders = useOrderStore((s) => s.subscribeToChanges);
   const subInvoices = useInvoiceStore((s) => s.subscribeToChanges);
 
+  const { showRulesModal, setShowRulesModal, checkStatus } = useSyncStore();
+
   useEffect(() => {
     let unsubs = [];
 
     const initData = async () => {
-      // 1. Fetch all data from Firebase
+      // 1. Immediately create a safety snapshot of all existing local data
+      saveEmergencyBackup();
+
+      // 2. Check cloud database connection
+      await checkStatus();
+
+      // 3. Fetch all data with safe merge (never overwriting local data with empty)
       try {
         await Promise.all([
           fetchTasks(),
@@ -83,13 +95,13 @@ function AppLayout() {
           fetchInvoices()
         ]);
 
-        // 2. Reconcile closed leads with revenue tracker ONCE on init
+        // 4. Reconcile closed leads with revenue tracker ONCE on init
         await useLeadStore.getState().reconcileLeads();
       } catch (e) {
         console.error('Initialization error:', e);
       }
 
-      // 3. Setup real-time subscriptions
+      // 5. Setup real-time subscriptions
       try {
         unsubs = [
           subTasks(),
@@ -140,11 +152,17 @@ function AppLayout() {
         setMobileOpen={setMobileOpen}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <CloudSyncBanner />
         {!hideTopbar && <Topbar onMenuClick={() => setMobileOpen(true)} />}
         <main className="flex-1 overflow-y-auto">
           <AnimatedRoutes />
         </main>
       </div>
+
+      <CloudSyncModal
+        open={showRulesModal}
+        onClose={() => setShowRulesModal(false)}
+      />
     </div>
   );
 }

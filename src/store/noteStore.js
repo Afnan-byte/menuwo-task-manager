@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { lsGet, lsSet, LS_KEYS } from '../lib/localStorage';
 import { db, isFirebaseConfigured } from '../lib/firebase';
+import { safeMergeItems } from '../lib/syncService';
 import { 
   collection, 
-  addDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc, 
   doc, 
@@ -18,63 +19,91 @@ const useNoteStore = create((set, get) => ({
   loading: false,
 
   fetchNotes: async () => {
-    if (!isFirebaseConfigured) return;
+    if (!isFirebaseConfigured || !db) return;
     set({ loading: true });
     try {
       const q = query(collection(db, 'notes'), orderBy('created_at', 'desc'));
       const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({
+      const remoteData = querySnapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id
       }));
-      set({ notes: data });
-      lsSet(LS_KEYS.NOTES, data);
+
+      // Safe merge to prevent deleting existing local data
+      const localNotes = get().notes || lsGet(LS_KEYS.NOTES);
+      const { merged, toUpload } = safeMergeItems(localNotes, remoteData);
+      set({ notes: merged });
+      lsSet(LS_KEYS.NOTES, merged);
+
+      // Upload unsynced local notes to cloud
+      if (toUpload.length > 0) {
+        for (const n of toUpload) {
+          try {
+            await setDoc(doc(db, 'notes', n.id), {
+              created_at: n.created_at || new Date().toISOString(),
+              title: n.title || '',
+              content: n.content || null,
+              category: n.category || null,
+              pinned: !!n.pinned,
+              color: n.color || null,
+            }, { merge: true });
+          } catch (uploadErr) {
+            console.warn('[Notes] Cloud upload item failed:', uploadErr);
+          }
+        }
+      }
     } catch (e) {
-      console.error('Firebase fetch error:', e);
+      console.warn('Firebase fetch notes warning:', e.message);
+    } finally {
+      set({ loading: false });
     }
-    set({ loading: false });
   },
 
   subscribeToChanges: () => {
-    if (!isFirebaseConfigured) return;
+    if (!isFirebaseConfigured || !db) return;
     const q = query(collection(db, 'notes'), orderBy('created_at', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
+      const remoteData = snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id
       }));
-      set({ notes: data });
-      lsSet(LS_KEYS.NOTES, data);
+      const localNotes = get().notes || [];
+      const { merged } = safeMergeItems(localNotes, remoteData);
+      set({ notes: merged });
+      lsSet(LS_KEYS.NOTES, merged);
+    }, (err) => {
+      console.warn('Firebase notes subscription warning:', err.message);
     });
     return unsubscribe;
   },
 
   addNote: async (note) => {
+    const noteId = note.id || crypto.randomUUID();
     const newNote = { 
       ...note, 
-      created_at: new Date().toISOString(),
+      id: noteId,
+      created_at: note.created_at || new Date().toISOString(),
       pinned: false
     };
     
     // Optimistic update
-    const optimisticId = crypto.randomUUID();
-    const updatedNotes = [{ ...newNote, id: optimisticId }, ...get().notes];
+    const updatedNotes = [newNote, ...get().notes.filter(n => n.id !== noteId)];
     set({ notes: updatedNotes });
     lsSet(LS_KEYS.NOTES, updatedNotes);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       const dbNote = {
         created_at: newNote.created_at,
-        title: newNote.title,
+        title: newNote.title || '',
         content: newNote.content || null,
         category: newNote.category || null,
         pinned: newNote.pinned || false,
         color: newNote.color || null,
       };
       try {
-        await addDoc(collection(db, 'notes'), dbNote);
+        await setDoc(doc(db, 'notes', noteId), dbNote, { merge: true });
       } catch (e) {
-        console.error('Firebase add error:', e);
+        console.warn('Firebase add note warning:', e.message);
       }
     }
   },
@@ -84,7 +113,7 @@ const useNoteStore = create((set, get) => ({
     set({ notes: updatedNotes });
     lsSet(LS_KEYS.NOTES, updatedNotes);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       const dbUpdates = {};
       if (updates.title !== undefined) dbUpdates.title = updates.title;
       if (updates.content !== undefined) dbUpdates.content = updates.content || null;
@@ -95,7 +124,7 @@ const useNoteStore = create((set, get) => ({
       try {
         await updateDoc(doc(db, 'notes', id), dbUpdates);
       } catch (e) {
-        console.error('Firebase update error:', e);
+        console.warn('Firebase update note warning:', e.message);
       }
     }
   },
@@ -105,11 +134,11 @@ const useNoteStore = create((set, get) => ({
     set({ notes: updatedNotes });
     lsSet(LS_KEYS.NOTES, updatedNotes);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       try {
         await deleteDoc(doc(db, 'notes', id));
       } catch (e) {
-        console.error('Firebase delete error:', e);
+        console.warn('Firebase delete note warning:', e.message);
       }
     }
   },
@@ -123,11 +152,11 @@ const useNoteStore = create((set, get) => ({
     set({ notes: updatedNotes });
     lsSet(LS_KEYS.NOTES, updatedNotes);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       try {
         await updateDoc(doc(db, 'notes', id), { pinned: newPinned });
       } catch (e) {
-        console.error('Firebase pin error:', e);
+        console.warn('Firebase pin warning:', e.message);
       }
     }
   },

@@ -1,17 +1,17 @@
 import { create } from 'zustand';
 import { lsGet, lsSet, LS_KEYS } from '../lib/localStorage';
 import { db, isFirebaseConfigured } from '../lib/firebase';
+import { safeMergeItems } from '../lib/syncService';
 import { 
   collection, 
-  addDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc, 
   doc, 
   onSnapshot, 
   query, 
   orderBy,
-  getDocs,
-  setDoc
+  getDocs
 } from 'firebase/firestore';
 
 const useLeadStore = create((set, get) => ({
@@ -19,23 +19,49 @@ const useLeadStore = create((set, get) => ({
   loading: false,
 
   fetchLeads: async () => {
-    if (!isFirebaseConfigured) return;
+    if (!isFirebaseConfigured || !db) return;
     set({ loading: true });
     try {
       const q = query(collection(db, 'leads'), orderBy('created_at', 'desc'));
       const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({
+      const remoteData = querySnapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id,
         dealValue: doc.data().deal_value,
         followUp: doc.data().follow_up,
       }));
-      set({ leads: data });
-      lsSet(LS_KEYS.LEADS, data);
+
+      // Safe merge to prevent deleting existing local data
+      const localLeads = get().leads || lsGet(LS_KEYS.LEADS);
+      const { merged, toUpload } = safeMergeItems(localLeads, remoteData);
+      set({ leads: merged });
+      lsSet(LS_KEYS.LEADS, merged);
+
+      // Upload unsynced local leads to cloud
+      if (toUpload.length > 0) {
+        for (const l of toUpload) {
+          try {
+            await setDoc(doc(db, 'leads', l.id), {
+              created_at: l.created_at || new Date().toISOString(),
+              restaurant: l.restaurant || '',
+              contact: l.contact || null,
+              phone: l.phone || null,
+              location: l.location || null,
+              status: l.status || 'lead',
+              deal_value: (l.dealValue !== '' && l.dealValue != null) ? parseFloat(l.dealValue) : 0,
+              follow_up: l.followUp || null,
+              notes: l.notes || null,
+            }, { merge: true });
+          } catch (uploadErr) {
+            console.warn('[Leads] Cloud upload item failed:', uploadErr);
+          }
+        }
+      }
     } catch (e) {
-      console.error('Firebase fetch error:', e);
+      console.warn('Firebase fetch leads warning:', e.message);
+    } finally {
+      set({ loading: false });
     }
-    set({ loading: false });
   },
 
   reconcileLeads: async () => {
@@ -51,37 +77,42 @@ const useLeadStore = create((set, get) => ({
   },
 
   subscribeToChanges: () => {
-    if (!isFirebaseConfigured) return;
+    if (!isFirebaseConfigured || !db) return;
     const q = query(collection(db, 'leads'), orderBy('created_at', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
+      const remoteData = snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id,
         dealValue: doc.data().deal_value,
         followUp: doc.data().follow_up,
       }));
-      set({ leads: data });
-      lsSet(LS_KEYS.LEADS, data);
+      const localLeads = get().leads || [];
+      const { merged } = safeMergeItems(localLeads, remoteData);
+      set({ leads: merged });
+      lsSet(LS_KEYS.LEADS, merged);
+    }, (err) => {
+      console.warn('Firebase leads subscription warning:', err.message);
     });
     return unsubscribe;
   },
 
   addLead: async (lead) => {
+    const leadId = lead.id || crypto.randomUUID();
     const newLead = { 
       ...lead, 
-      id: lead.id || crypto.randomUUID(), 
-      created_at: new Date().toISOString() 
+      id: leadId, 
+      created_at: lead.created_at || new Date().toISOString() 
     };
-    const updatedLeads = [newLead, ...get().leads];
+    const updatedLeads = [newLead, ...get().leads.filter(l => l.id !== leadId)];
     set({ leads: updatedLeads });
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       const dv = newLead.dealValue;
       const fu = newLead.followUp;
       const dbLead = {
         created_at: newLead.created_at,
-        restaurant: newLead.restaurant,
+        restaurant: newLead.restaurant || '',
         contact: newLead.contact || null,
         phone: newLead.phone || null,
         location: newLead.location || null,
@@ -92,17 +123,14 @@ const useLeadStore = create((set, get) => ({
       };
 
       try {
-        const docRef = await addDoc(collection(db, 'leads'), dbLead);
-        // Sync with revenue using the REAL ID from Firestore
-        const { default: useExpenseStore } = await import('./expenseStore');
-        await handleLeadRevenueSync(docRef.id, { ...newLead, id: docRef.id }, useExpenseStore.getState());
+        await setDoc(doc(db, 'leads', leadId), dbLead, { merge: true });
       } catch (e) {
-        console.error('Firebase add error:', e);
+        console.warn('Firebase add lead warning:', e.message);
       }
-    } else {
-      const { default: useExpenseStore } = await import('./expenseStore');
-      await handleLeadRevenueSync(newLead.id, newLead, useExpenseStore.getState());
     }
+
+    const { default: useExpenseStore } = await import('./expenseStore');
+    await handleLeadRevenueSync(leadId, newLead, useExpenseStore.getState());
   },
 
   updateLead: async (id, updates) => {
@@ -111,7 +139,7 @@ const useLeadStore = create((set, get) => ({
     set({ leads: updatedLeads });
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       const dbUpdates = {};
       if (updates.restaurant !== undefined) dbUpdates.restaurant = updates.restaurant;
       if (updates.contact !== undefined) dbUpdates.contact = updates.contact || null;
@@ -129,7 +157,7 @@ const useLeadStore = create((set, get) => ({
       try {
         await updateDoc(doc(db, 'leads', id), dbUpdates);
       } catch (e) {
-        console.error('Firebase update error:', e);
+        console.warn('Firebase update lead warning:', e.message);
       }
     }
 
@@ -145,11 +173,11 @@ const useLeadStore = create((set, get) => ({
     const { default: useExpenseStore } = await import('./expenseStore');
     await handleLeadRevenueSync(id, { status: 'deleted' }, useExpenseStore.getState());
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       try {
         await deleteDoc(doc(db, 'leads', id));
       } catch (e) {
-        console.error('Firebase delete error:', e);
+        console.warn('Firebase delete lead warning:', e.message);
       }
     }
   },
@@ -160,11 +188,11 @@ const useLeadStore = create((set, get) => ({
     set({ leads: updatedLeads });
     lsSet(LS_KEYS.LEADS, updatedLeads);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       try {
         await updateDoc(doc(db, 'leads', id), { status: newStatus });
       } catch (e) {
-        console.error('Firebase move error:', e);
+        console.warn('Firebase move lead warning:', e.message);
       }
     }
 
@@ -213,7 +241,7 @@ async function handleLeadRevenueSync(leadId, lead, expenseStore) {
       }
     }
   } catch (e) {
-    console.error('Lead revenue sync error:', e);
+    console.warn('Lead revenue sync warning:', e.message);
   }
 }
 

@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { isFirebaseConfigured } from '../../lib/firebase';
+import useSyncStore from '../../store/syncStore';
 import {
   LayoutDashboard, CheckSquare, Users, DollarSign,
   Calendar, FileText, Package, BarChart2, Sparkles,
@@ -23,16 +23,52 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) {
   const location = useLocation();
+  const { status, setShowRulesModal } = useSyncStore();
+
+  const getStatusBadge = () => {
+    switch (status) {
+      case 'connected':
+        return {
+          text: 'Cloud Synced',
+          classes: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/20',
+          dot: 'bg-emerald-400 animate-pulse'
+        };
+      case 'permission_denied':
+        return {
+          text: 'Rules Needed',
+          classes: 'bg-amber-500/10 text-amber-400 border border-amber-500/20 cursor-pointer hover:bg-amber-500/20 animate-pulse',
+          dot: 'bg-amber-400'
+        };
+      case 'checking':
+        return {
+          text: 'Connecting...',
+          classes: 'bg-white/5 text-text-muted',
+          dot: 'bg-white/40 animate-ping'
+        };
+      default:
+        return {
+          text: 'Local Only',
+          classes: 'bg-white/5 text-text-muted cursor-pointer hover:bg-white/10',
+          dot: 'bg-text-muted'
+        };
+    }
+  };
+
+  const badge = getStatusBadge();
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex flex-col items-center justify-center py-6 border-b border-white/5 gap-2">
         <img src="/logo.png" alt="Menuwo Logo" className="w-28 h-auto object-contain" />
-        <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider ${isFirebaseConfigured ? 'bg-accent/10 text-accent' : 'bg-white/5 text-text-muted'}`}>
-          <div className={`w-1 h-1 rounded-full ${isFirebaseConfigured ? 'bg-accent animate-pulse' : 'bg-text-muted'}`} />
-          {isFirebaseConfigured ? 'Firebase Sync Active' : 'Local Only'}
-        </div>
+        <button
+          onClick={() => setShowRulesModal(true)}
+          className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider transition-colors ${badge.classes}`}
+          title="Click to view cloud sync status & details"
+        >
+          <div className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+          {badge.text}
+        </button>
       </div>
 
       {/* Nav */}

@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { lsGet, lsSet, LS_KEYS } from '../lib/localStorage';
 import { db, isFirebaseConfigured } from '../lib/firebase';
+import { safeMergeItems } from '../lib/syncService';
 import { 
   collection, 
-  addDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc, 
   doc, 
@@ -18,62 +19,90 @@ const useExpenseStore = create((set, get) => ({
   loading: false,
 
   fetchEntries: async () => {
-    if (!isFirebaseConfigured) return;
+    if (!isFirebaseConfigured || !db) return;
     set({ loading: true });
     try {
       const q = query(collection(db, 'expenses'), orderBy('created_at', 'desc'));
       const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({
+      const remoteData = querySnapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id
       }));
-      set({ entries: data });
-      lsSet(LS_KEYS.EXPENSES, data);
+
+      // Safe merge to prevent deleting existing local data
+      const localEntries = get().entries || lsGet(LS_KEYS.EXPENSES);
+      const { merged, toUpload } = safeMergeItems(localEntries, remoteData);
+      set({ entries: merged });
+      lsSet(LS_KEYS.EXPENSES, merged);
+
+      // Upload unsynced local entries to cloud
+      if (toUpload.length > 0) {
+        for (const e of toUpload) {
+          try {
+            await setDoc(doc(db, 'expenses', e.id), {
+              created_at: e.created_at || new Date().toISOString(),
+              type: e.type || 'expense',
+              amount: parseFloat(e.amount) || 0,
+              category: e.category || null,
+              date: (e.date !== '' && e.date != null) ? e.date : null,
+              notes: e.notes || null,
+            }, { merge: true });
+          } catch (uploadErr) {
+            console.warn('[Expenses] Cloud upload item failed:', uploadErr);
+          }
+        }
+      }
     } catch (e) {
-      console.error('Firebase fetch error:', e);
+      console.warn('Firebase fetch expenses warning:', e.message);
+    } finally {
+      set({ loading: false });
     }
-    set({ loading: false });
   },
 
   subscribeToChanges: () => {
-    if (!isFirebaseConfigured) return;
+    if (!isFirebaseConfigured || !db) return;
     const q = query(collection(db, 'expenses'), orderBy('created_at', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
+      const remoteData = snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id
       }));
-      set({ entries: data });
-      lsSet(LS_KEYS.EXPENSES, data);
+      const localEntries = get().entries || [];
+      const { merged } = safeMergeItems(localEntries, remoteData);
+      set({ entries: merged });
+      lsSet(LS_KEYS.EXPENSES, merged);
+    }, (err) => {
+      console.warn('Firebase expenses subscription warning:', err.message);
     });
     return unsubscribe;
   },
 
   addEntry: async (entry) => {
+    const entryId = entry.id || crypto.randomUUID();
     const newEntry = { 
       ...entry, 
-      created_at: new Date().toISOString() 
+      id: entryId,
+      created_at: entry.created_at || new Date().toISOString() 
     };
     
     // Optimistic update
-    const optimisticId = crypto.randomUUID();
-    const updatedEntries = [{ ...newEntry, id: optimisticId }, ...get().entries];
+    const updatedEntries = [newEntry, ...get().entries.filter(e => e.id !== entryId)];
     set({ entries: updatedEntries });
     lsSet(LS_KEYS.EXPENSES, updatedEntries);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       const dbEntry = {
         created_at: newEntry.created_at,
-        type: newEntry.type,
+        type: newEntry.type || 'expense',
         amount: parseFloat(newEntry.amount) || 0,
         category: newEntry.category || null,
         date: (newEntry.date !== '' && newEntry.date != null) ? newEntry.date : null,
         notes: newEntry.notes || null,
       };
       try {
-        await addDoc(collection(db, 'expenses'), dbEntry);
+        await setDoc(doc(db, 'expenses', entryId), dbEntry, { merge: true });
       } catch (e) {
-        console.error('Firebase add error:', e);
+        console.warn('Firebase add expense warning:', e.message);
       }
     }
   },
@@ -83,7 +112,7 @@ const useExpenseStore = create((set, get) => ({
     set({ entries: updatedEntries });
     lsSet(LS_KEYS.EXPENSES, updatedEntries);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       const dbUpdates = {};
       if (updates.type !== undefined) dbUpdates.type = updates.type;
       if (updates.amount !== undefined) dbUpdates.amount = parseFloat(updates.amount) || 0;
@@ -94,7 +123,7 @@ const useExpenseStore = create((set, get) => ({
       try {
         await updateDoc(doc(db, 'expenses', id), dbUpdates);
       } catch (e) {
-        console.error('Firebase update error:', e);
+        console.warn('Firebase update expense warning:', e.message);
       }
     }
   },
@@ -104,11 +133,11 @@ const useExpenseStore = create((set, get) => ({
     set({ entries: updatedEntries });
     lsSet(LS_KEYS.EXPENSES, updatedEntries);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       try {
         await deleteDoc(doc(db, 'expenses', id));
       } catch (e) {
-        console.error('Firebase delete error:', e);
+        console.warn('Firebase delete expense warning:', e.message);
       }
     }
   },

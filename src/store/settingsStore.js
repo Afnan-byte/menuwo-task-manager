@@ -5,7 +5,6 @@ import {
   doc, 
   getDoc,
   setDoc,
-  updateDoc
 } from 'firebase/firestore';
 
 const PROFILE_ID = 'profile_001';
@@ -21,7 +20,7 @@ const useSettingsStore = create((set, get) => ({
   loading: false,
 
   fetchSettings: async () => {
-    if (!isFirebaseConfigured) return;
+    if (!isFirebaseConfigured || !db) return;
     set({ loading: true });
     
     try {
@@ -31,6 +30,12 @@ const useSettingsStore = create((set, get) => ({
         const data = profileDoc.data();
         set({ profile: data });
         lsSet('menuwo_profile', data);
+      } else {
+        // Cloud has no profile yet - upload existing local profile
+        const localProfile = get().profile;
+        if (localProfile) {
+          await setDoc(doc(db, 'profiles', PROFILE_ID), localProfile, { merge: true });
+        }
       }
 
       // Fetch notifications
@@ -39,18 +44,28 @@ const useSettingsStore = create((set, get) => ({
         const data = notifDoc.data();
         const mappedNotifs = {
           ...data,
-          overdueTasks: data.overdue_tasks,
-          leadFollowups: data.lead_followups,
-          dailyBriefing: data.daily_briefing,
+          overdueTasks: data.overdue_tasks ?? true,
+          leadFollowups: data.lead_followups ?? true,
+          dailyBriefing: data.daily_briefing ?? true,
         };
         set({ notifications: mappedNotifs });
         lsSet('menuwo_notif', mappedNotifs);
+      } else {
+        // Cloud has no notifications yet - upload local
+        const localNotifs = get().notifications;
+        if (localNotifs) {
+          await setDoc(doc(db, 'notifications', NOTIF_ID), {
+            overdue_tasks: localNotifs.overdueTasks ?? true,
+            lead_followups: localNotifs.leadFollowups ?? true,
+            daily_briefing: localNotifs.dailyBriefing ?? true,
+          }, { merge: true });
+        }
       }
     } catch (e) {
-      console.error('Firebase settings fetch error:', e);
+      console.warn('Firebase settings fetch warning:', e.message);
+    } finally {
+      set({ loading: false });
     }
-
-    set({ loading: false });
   },
 
   updateProfile: async (updates) => {
@@ -58,11 +73,11 @@ const useSettingsStore = create((set, get) => ({
     set({ profile: newProfile });
     lsSet('menuwo_profile', newProfile);
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && db) {
       try {
         await setDoc(doc(db, 'profiles', PROFILE_ID), newProfile, { merge: true });
       } catch (e) {
-        console.error('Firebase profile update error:', e);
+        console.warn('Firebase profile update warning:', e.message);
       }
     }
   },
@@ -72,9 +87,7 @@ const useSettingsStore = create((set, get) => ({
     set({ notifications: newNotifs });
     lsSet('menuwo_notif', newNotifs);
 
-    if (isFirebaseConfigured) {
-      // Map camelCase to snake_case for consistency with DB schema if desired, 
-      // though Firestore is flexible with camelCase.
+    if (isFirebaseConfigured && db) {
       const dbNotifs = {
         overdue_tasks: newNotifs.overdueTasks,
         lead_followups: newNotifs.leadFollowups,
@@ -84,7 +97,7 @@ const useSettingsStore = create((set, get) => ({
       try {
         await setDoc(doc(db, 'notifications', NOTIF_ID), dbNotifs, { merge: true });
       } catch (e) {
-        console.error('Firebase notif update error:', e);
+        console.warn('Firebase notif update warning:', e.message);
       }
     }
   },
