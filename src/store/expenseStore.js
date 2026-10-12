@@ -146,7 +146,8 @@ const useExpenseStore = create((set, get) => ({
     const entries = get().entries;
     const revenue = entries.filter((e) => e.type === 'revenue').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
     const expenses = entries.filter((e) => e.type === 'expense').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-    return { revenue, expenses, profit: revenue - expenses };
+    const pending = entries.filter((e) => e.type === 'pending').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+    return { revenue, expenses, profit: revenue - expenses, pending };
   },
 
   getByMonth: () => {
@@ -154,7 +155,7 @@ const useExpenseStore = create((set, get) => ({
     const monthMap = {};
     entries.forEach((e) => {
       const dateVal = e.created_at || e.date;
-      const month = dateVal ? new Date(dateVal).toLocaleString('default', { month: 'short', year: 'numeric' }) : 'Unknown';
+      const month = dateVal ? new Date(dateVal).toLocaleString('default', { month: 'short' }) : 'Unknown';
       if (!monthMap[month]) monthMap[month] = { month, revenue: 0, expenses: 0 };
       if (e.type === 'revenue') monthMap[month].revenue += parseFloat(e.amount) || 0;
       else monthMap[month].expenses += parseFloat(e.amount) || 0;

@@ -21,7 +21,7 @@ const InvoiceTemplate = ({ invoice }) => {
           <h3 className="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider mb-2 md:mb-3">From</h3>
           <p className="font-bold text-gray-900 text-base md:text-lg">Menuwo</p>
           <p className="text-gray-600 mt-1 text-sm">info@menuwo.in</p>
-          <p className="text-gray-600 text-sm">www.menuwo.com</p>
+          <p className="text-gray-600 text-sm">www.menuwo.in</p>
         </div>
         <div className="sm:text-right">
           <h3 className="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider mb-2 md:mb-3">Bill To</h3>

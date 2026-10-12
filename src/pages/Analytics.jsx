@@ -56,7 +56,7 @@ export default function Analytics() {
 
   const monthMap = {};
   entries.forEach((e) => {
-    const month = e.date ? new Date(e.date).toLocaleString('default', { month: 'short', year: '2-digit' }) : 'Unknown';
+    const month = e.date ? new Date(e.date).toLocaleString('default', { month: 'short' }) : 'Unknown';
     if (!monthMap[month]) monthMap[month] = { month, revenue: 0, expenses: 0 };
     if (e.type === 'revenue') monthMap[month].revenue += parseFloat(e.amount) || 0;
     else monthMap[month].expenses += parseFloat(e.amount) || 0;
