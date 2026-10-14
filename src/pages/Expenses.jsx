@@ -8,6 +8,7 @@ import { Plus, X, TrendingUp, TrendingDown, Minus, Trash2, Edit2, Clock, CheckCi
 import PageWrapper from '../components/layout/PageWrapper';
 import useExpenseStore from '../store/expenseStore';
 import { formatCurrency, formatDate } from '../lib/utils';
+import ReceiveSplitModal from '../components/expenses/ReceiveSplitModal';
 
 const EXPENSE_CATEGORIES = ['Marketing', 'Travel', 'Printing', 'Software', 'Food', 'Other'];
 const REVENUE_CATEGORIES = ['Client Project', 'Monthly Retainer', 'Menu Design', 'Consulting', 'Software / Tech', 'Other'];
@@ -159,6 +160,7 @@ export default function Expenses() {
   const { entries, addEntry, updateEntry, deleteEntry } = useExpenseStore();
   const [showModal, setShowModal] = useState(false);
   const [editEntry, setEditEntry] = useState(null);
+  const [receiveEntry, setReceiveEntry] = useState(null);
   const [filter, setFilter] = useState('all');
 
   // Compute derived values locally
@@ -198,8 +200,54 @@ export default function Expenses() {
     setEditEntry(null);
   };
 
-  const handleMarkReceived = (id) => {
-    updateEntry(id, { type: 'revenue' });
+  const handleConfirmReceive = async ({
+    pendingId,
+    revenueAmount,
+    revenueCategory,
+    revenueNotes,
+    expenseAmount,
+    expenseCategory,
+    expenseNotes,
+    date,
+  }) => {
+    const revNum = parseFloat(revenueAmount) || 0;
+    const expNum = parseFloat(expenseAmount) || 0;
+
+    if (revNum > 0 && expNum > 0) {
+      await updateEntry(pendingId, {
+        type: 'revenue',
+        amount: revNum,
+        category: revenueCategory,
+        notes: revenueNotes,
+        date: date,
+      });
+
+      await addEntry({
+        type: 'expense',
+        amount: expNum,
+        category: expenseCategory,
+        notes: expenseNotes,
+        date: date,
+      });
+    } else if (expNum > 0 && revNum === 0) {
+      await updateEntry(pendingId, {
+        type: 'expense',
+        amount: expNum,
+        category: expenseCategory,
+        notes: expenseNotes,
+        date: date,
+      });
+    } else {
+      await updateEntry(pendingId, {
+        type: 'revenue',
+        amount: revNum > 0 ? revNum : (parseFloat(receiveEntry?.amount) || 0),
+        category: revenueCategory,
+        notes: revenueNotes,
+        date: date,
+      });
+    }
+
+    setReceiveEntry(null);
   };
 
   return (
@@ -441,8 +489,8 @@ export default function Expenses() {
                         <div className="flex items-center justify-end gap-1.5">
                           {entry.type === 'pending' && (
                             <button
-                              onClick={() => handleMarkReceived(entry.id)}
-                              title="Mark as Received (Converts to Revenue)"
+                              onClick={() => setReceiveEntry(entry)}
+                              title="Mark as Received & Split Revenue / Expense"
                               className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-1 transition-all border border-emerald-500/20"
                             >
                               <CheckCircle2 size={13} />
@@ -507,7 +555,8 @@ export default function Expenses() {
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {entry.type === 'pending' && (
                       <button
-                        onClick={() => handleMarkReceived(entry.id)}
+                        onClick={() => setReceiveEntry(entry)}
+                        title="Mark as Received & Split"
                         className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-1 transition-all border border-emerald-500/20"
                       >
                         <CheckCircle2 size={13} />
@@ -554,6 +603,17 @@ export default function Expenses() {
           entry={editEntry}
           onClose={() => { setShowModal(false); setEditEntry(null); }}
           onSave={handleSave}
+        />
+      )}
+
+      {receiveEntry && (
+        <ReceiveSplitModal
+          open={Boolean(receiveEntry)}
+          entry={receiveEntry}
+          revenueCategories={REVENUE_CATEGORIES}
+          expenseCategories={EXPENSE_CATEGORIES}
+          onClose={() => setReceiveEntry(null)}
+          onConfirm={handleConfirmReceive}
         />
       )}
     </PageWrapper>
